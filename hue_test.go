@@ -31,6 +31,7 @@ func TestFprint(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			hue.Enabled = true
 			buf := &bytes.Buffer{}
 			tt.style.Fprint(buf, tt.input)
 
@@ -67,6 +68,7 @@ func TestFprintf(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			hue.Enabled = true
 			buf := &bytes.Buffer{}
 			tt.style.Fprintf(buf, tt.input, tt.args...)
 
@@ -100,6 +102,7 @@ func TestFprintln(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			hue.Enabled = true
 			buf := &bytes.Buffer{}
 			tt.style.Fprintln(buf, tt.input)
 
@@ -162,6 +165,7 @@ func TestStyleCode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			hue.Enabled = true
 			got, err := tt.style.Code()
 			test.Ok(t, err)
 			test.Equal(t, got, tt.want)
@@ -186,6 +190,7 @@ func TestStyleError(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			hue.Enabled = true
 			got, err := tt.style.Code()
 			test.Err(t, err, test.Context("would have got %s", got))
 		})
@@ -227,6 +232,7 @@ func TestStyleCodeCombinations(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			hue.Enabled = true
 			got, err := tt.style.Code()
 			test.Ok(t, err)
 			test.Equal(t, got, tt.want)
@@ -235,6 +241,7 @@ func TestStyleCodeCombinations(t *testing.T) {
 }
 
 func BenchmarkStyle(b *testing.B) {
+	hue.Enabled = true
 	b.Run("simple", func(b *testing.B) {
 		style := hue.Cyan
 		for range b.N {
