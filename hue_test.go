@@ -1,6 +1,7 @@
 package hue_test
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/FollowTheProcess/hue"
@@ -13,7 +14,11 @@ func TestStyleString(t *testing.T) {
 		want  string    // Expected string
 		style hue.Style // The style under test
 	}{
-		{name: "above max", style: hue.Style(2199023255552), want: "invalid style: Style(2199023255552)"},
+		{
+			name:  "above max",
+			style: hue.Style(2199023255552),
+			want:  "invalid style: Style(2199023255552)",
+		},
 		{name: "bold", style: hue.Bold, want: "1"},
 		{name: "dim", style: hue.Dim, want: "2"},
 		{name: "italic", style: hue.Italic, want: "3"},
@@ -74,27 +79,27 @@ func TestStyleStringCombinations(t *testing.T) {
 		{
 			name:  "bold cyan",
 			style: hue.Bold | hue.Cyan,
-			want:  "1;36m",
+			want:  "1;36",
 		},
 		{
 			name:  "bold white underlined",
 			style: hue.Bold | hue.White | hue.Underline,
-			want:  "1;4;37m",
+			want:  "1;4;37",
 		},
 		{
 			name:  "bold white underlined different order",
 			style: hue.White | hue.Underline | hue.Bold,
-			want:  "1;4;37m",
+			want:  "1;4;37",
 		},
 		{
 			name:  "multiple colors",
 			style: hue.White | hue.Cyan | hue.Red,
-			want:  "31;36;37m",
+			want:  "31;36;37",
 		},
 		{
 			name:  "lots of everything",
 			style: hue.Blue | hue.Red | hue.BlackBackground | hue.BlinkFast | hue.Strikethrough | hue.Bold,
-			want:  "1;6;9;31;34;40m",
+			want:  "1;6;9;31;34;40",
 		},
 	}
 
@@ -102,6 +107,31 @@ func TestStyleStringCombinations(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.style.String()
 			test.Equal(t, got, tt.want)
+		})
+	}
+}
+
+func TestColour(t *testing.T) {
+	tests := []struct {
+		name  string    // Name of the test case
+		text  string    // The message to colour
+		want  string    // Expected (raw) output
+		style hue.Style // The style to apply
+	}{
+		{
+			name:  "basic",
+			text:  "hello",
+			style: hue.Green,
+			want:  "\x1b[32mhello\x1b[0m",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := strconv.Quote(tt.style.Sprint(tt.text))
+			want := strconv.Quote(tt.want)
+
+			test.Equal(t, got, want)
 		})
 	}
 }
