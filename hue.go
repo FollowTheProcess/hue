@@ -3,6 +3,7 @@ package hue
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -133,31 +134,77 @@ var styleStrings = map[Style]string{ //nolint: exhaustive // We don't need maxSt
 	BrightWhiteBackground:   "107",
 }
 
-// String implements [fmt.Stringer] for Style.
+// Code returns the ANSI escape code for the given style, minus the escape
+// characters '\x1b[' and 'm' which mark the start and end of the ANSI sequence; respectively.
 //
-// It returns the unescaped style sequence (i.e. without the '\x1b' prefix).
-func (s Style) String() string {
-	// TODO(@FollowTheProcess): Not sure if I should have the string method actually, it's useful for now
-	// because we don't have any other means of testing the escape sequence
-	if s >= maxStyle {
-		return fmt.Sprintf("invalid style: Style(%d)", s)
+// Callers rarely need this code and should use one of the print style methods instead
+// but it is occasionally useful for debugging.
+//
+// Code returns an error if the style is invalid.
+func (s Style) Code() (string, error) {
+	if s >= maxStyle || s == 0 {
+		return "", fmt.Errorf("invalid style: Style(%d)", s)
 	}
 	if str, ok := styleStrings[s]; ok {
-		return str
+		return str, nil
 	}
 
-	// TODO(@FollowTheProcess): Width padding so that it aligns with text/tabwriter properly
-
-	// Combinations
 	styles := make([]string, 0, numStyles)
 	for style := Bold; style <= BrightWhiteBackground; style <<= 1 {
-		// If the given style has this style bit set, add it to the string
+		// If the given style has this style bit set, add its code to the string
 		if s&style != 0 {
-			styles = append(styles, style.String())
+			code, err := style.Code()
+			if err != nil {
+				return "", err
+			}
+			styles = append(styles, code)
 		}
 	}
 
-	return strings.Join(styles, ";")
+	return strings.Join(styles, ";"), nil
+}
+
+// Fprint formats using the default formats for its operands and writes to w.
+// Spaces are added between operands when neither is a string.
+// It returns the number of bytes written and any write error encountered.
+func (s Style) Fprint(w io.Writer, a ...any) (n int, err error) {
+	text := s.wrap(fmt.Sprint(a...))
+	return fmt.Fprint(w, text)
+}
+
+// Fprintf formats according to a format specifier and writes to w. It returns
+// the number of bytes written and any write error.
+func (s Style) Fprintf(w io.Writer, format string, a ...any) (n int, err error) {
+	text := s.wrap(fmt.Sprintf(format, a...))
+	return fmt.Fprint(w, text)
+}
+
+// Fprintln formats using the default format for its operands and writes to w. Spaces are always
+// added between operands and a newline is appended. It returns the number of bytes written
+// and any write error encountered.
+func (s Style) Fprintln(w io.Writer, a ...any) (n int, err error) {
+	text := s.wrap(fmt.Sprintln(a...))
+	return fmt.Fprint(w, text)
+}
+
+// Print formats using the default formats for its operands and writes to [os.Stdout]. Spaces are
+// added between operands when neither is a string. It returns the number of bytes written and
+// any write error encountered.
+func (s Style) Print(a ...any) (n int, err error) {
+	return s.Fprint(os.Stdout, a...)
+}
+
+// Printf formats according to a format specifier and writes to [os.Stdout]. It returns
+// the number of bytes written and any write error encountered.
+func (s Style) Printf(format string, a ...any) (n int, err error) {
+	return s.Fprintf(os.Stdout, format, a...)
+}
+
+// Println formats using the default formats for its operands and writes to [os.Stdout]. Spaces are always
+// added between operands and a newline is appended. It returns the number of bytes written
+// and any write error encountered.
+func (s Style) Println(a ...any) (n int, err error) {
+	return s.Fprintln(os.Stdout, a...)
 }
 
 // Sprint formats using the default formats for its operands and returns the resulting stylised string. Spaces
@@ -166,12 +213,29 @@ func (s Style) Sprint(a ...any) string {
 	return s.wrap(fmt.Sprint(a...))
 }
 
+// Sprintf formats according to a format specifier and returns the resulting stylised string.
+func (s Style) Sprintf(format string, a ...any) string {
+	return s.wrap(fmt.Sprintf(format, a...))
+}
+
+// Sprintln formats using the default formats for its operands and returns the resulting string. Spaces are always
+// added between operands and a newline is appended.
+func (s Style) Sprintln(a ...any) string {
+	text := s.wrap(fmt.Sprintln(a...))
+	return fmt.Sprintln(text)
+}
+
 // wrap wraps text with the styles escape and reset sequences.
 func (s Style) wrap(text string) string {
 	if !Enabled {
 		return text
 	}
-	return escape + s.String() + "m" + text + reset
+
+	code, err := s.Code()
+	if err != nil {
+		return text
+	}
+	return escape + code + "m" + text + reset
 }
 
 // defaultEnabled performs checks to determine the auto-detect value for [Enabled].

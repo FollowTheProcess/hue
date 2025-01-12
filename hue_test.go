@@ -1,6 +1,7 @@
 package hue_test
 
 import (
+	"bytes"
 	"strconv"
 	"testing"
 
@@ -8,17 +9,114 @@ import (
 	"github.com/FollowTheProcess/test"
 )
 
-func TestStyleString(t *testing.T) {
+func TestFprint(t *testing.T) {
+	tests := []struct {
+		name  string    // Name of the test case
+		input string    // Text to style
+		want  string    // Expected result including escape sequences
+		style hue.Style // Style under test
+	}{
+		{
+			name:  "basic",
+			input: "hello",
+			style: hue.Green,
+			want:  "\x1b[32mhello\x1b[0m",
+		},
+		{
+			name:  "many styles",
+			input: "hello",
+			style: hue.Green | hue.BlueBackground | hue.Bold | hue.Underline,
+			want:  "\x1b[1;4;32;44mhello\x1b[0m",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf := &bytes.Buffer{}
+			tt.style.Fprint(buf, tt.input)
+
+			got := strconv.Quote(buf.String())
+			want := strconv.Quote(tt.want)
+
+			test.Equal(t, got, want)
+		})
+	}
+}
+
+func TestFprintf(t *testing.T) {
+	tests := []struct {
+		name  string    // Name of the test case
+		input string    // Text to style
+		want  string    // Expected result including escape sequences
+		args  []any     // Args to Fprintf
+		style hue.Style // Style under test
+	}{
+		{
+			name:  "basic",
+			input: "hello %s",
+			args:  []any{"hue"},
+			style: hue.Magenta,
+			want:  "\x1b[35mhello hue\x1b[0m",
+		},
+		{
+			name:  "many styles",
+			input: "how many styles %s? %d",
+			args:  []any{"hue", 4},
+			style: hue.Blue | hue.RedBackground | hue.Italic | hue.Bold,
+			want:  "\x1b[1;3;34;41mhow many styles hue? 4\x1b[0m",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf := &bytes.Buffer{}
+			tt.style.Fprintf(buf, tt.input, tt.args...)
+
+			got := strconv.Quote(buf.String())
+			want := strconv.Quote(tt.want)
+
+			test.Equal(t, got, want)
+		})
+	}
+}
+
+func TestFprintln(t *testing.T) {
+	tests := []struct {
+		name  string    // Name of the test case
+		input string    // Text to style
+		want  string    // Expected result including escape sequences
+		style hue.Style // Style under test
+	}{
+		{
+			name:  "basic",
+			input: "woah!",
+			style: hue.BrightGreen,
+			want:  "\x1b[92mwoah!\n\x1b[0m",
+		},
+		{
+			name:  "many styles",
+			input: "such wow",
+			style: hue.BrightCyan | hue.Strikethrough | hue.BlinkSlow,
+			want:  "\x1b[5;9;96msuch wow\n\x1b[0m",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf := &bytes.Buffer{}
+			tt.style.Fprintln(buf, tt.input)
+
+			got := strconv.Quote(buf.String())
+			want := strconv.Quote(tt.want)
+
+			test.Equal(t, got, want)
+		})
+	}
+}
+
+func TestStyleCode(t *testing.T) {
 	tests := []struct {
 		name  string    // Name of the test case
 		want  string    // Expected string
 		style hue.Style // The style under test
 	}{
-		{
-			name:  "above max",
-			style: hue.Style(2199023255552),
-			want:  "invalid style: Style(2199023255552)",
-		},
 		{name: "bold", style: hue.Bold, want: "1"},
 		{name: "dim", style: hue.Dim, want: "2"},
 		{name: "italic", style: hue.Italic, want: "3"},
@@ -64,13 +162,37 @@ func TestStyleString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.style.String()
+			got, err := tt.style.Code()
+			test.Ok(t, err)
 			test.Equal(t, got, tt.want)
 		})
 	}
 }
 
-func TestStyleStringCombinations(t *testing.T) {
+func TestStyleError(t *testing.T) {
+	tests := []struct {
+		name  string    // Name of the test case
+		style hue.Style // Style under test
+	}{
+		{
+			name:  "zero",
+			style: 0,
+		},
+		{
+			name:  "too high",
+			style: 2199023255553, // > maxStyle
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.style.Code()
+			test.Err(t, err, test.Context("would have got %s", got))
+		})
+	}
+}
+
+func TestStyleCodeCombinations(t *testing.T) {
 	tests := []struct {
 		name  string    // Name of the test case
 		want  string    // Expected string
@@ -105,43 +227,9 @@ func TestStyleStringCombinations(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.style.String()
+			got, err := tt.style.Code()
+			test.Ok(t, err)
 			test.Equal(t, got, tt.want)
-		})
-	}
-}
-
-func TestColour(t *testing.T) {
-	tests := []struct {
-		name    string    // Name of the test case
-		text    string    // The message to colour
-		want    string    // Expected (raw) output
-		enabled bool      // What to set hue.Enabled to
-		style   hue.Style // The style to apply
-	}{
-		{
-			name:    "basic",
-			text:    "hello",
-			style:   hue.Green,
-			enabled: true,
-			want:    "\x1b[32mhello\x1b[0m",
-		},
-		{
-			name:    "basic",
-			text:    "hello",
-			style:   hue.Green,
-			enabled: false,
-			want:    "hello",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			hue.Enabled = tt.enabled
-			got := strconv.Quote(tt.style.Sprint(tt.text))
-			want := strconv.Quote(tt.want)
-
-			test.Equal(t, got, want)
 		})
 	}
 }
@@ -150,14 +238,20 @@ func BenchmarkStyle(b *testing.B) {
 	b.Run("simple", func(b *testing.B) {
 		style := hue.Cyan
 		for range b.N {
-			_ = style.String()
+			_, err := style.Code()
+			if err != nil {
+				b.Fatalf("Code returned an unexpected error: %v", err)
+			}
 		}
 	})
 
 	b.Run("composite", func(b *testing.B) {
 		style := hue.Cyan | hue.WhiteBackground | hue.Bold | hue.Strikethrough
 		for range b.N {
-			_ = style.String()
+			_, err := style.Code()
+			if err != nil {
+				b.Fatalf("Code returned an unexpected error: %v", err)
+			}
 		}
 	})
 }
