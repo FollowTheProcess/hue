@@ -20,10 +20,10 @@ The dominant package in this space for Go is [fatih/color] which I've used befor
 
 - Alignment/width of colourised text is maintained for [text/tabwriter]
 - Support both `$NO_COLOR` and `$FORCE_COLOR`
-- Smaller public interface
+- Smaller public interface, more simple
 - Zero allocations (may not be possible)
 
-Like most libraries that do this sort of thing, hue uses [ANSI Escape Codes] to instruct the terminal emulator to render particular colours. See [here](https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797) for a helpful breakdown of how these codes work
+Like most libraries that do this sort of thing, hue uses [ANSI Escape Codes] to instruct the terminal emulator to render particular colours. See [here](https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797) for a helpful breakdown of how these codes work.
 
 > [!NOTE]
 > Windows support is best effort, I don't own or use any windows devices so it's not a super high priority for me. If Windows support is important to you, you should use [fatih/color]
@@ -53,6 +53,9 @@ func main() {
     failure.Println("Not really")
 }
 ```
+
+> [!TIP]
+> Most functions from the `fmt` package are implemented for hue styles including `Sprintf`, `Fprintln` etc.
 
 ### Credits
 
