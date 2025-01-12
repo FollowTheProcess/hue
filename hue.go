@@ -168,6 +168,9 @@ func (s Style) Sprint(a ...any) string {
 
 // wrap wraps text with the styles escape and reset sequences.
 func (s Style) wrap(text string) string {
+	if !Enabled {
+		return text
+	}
 	return escape + s.String() + "m" + text + reset
 }
 

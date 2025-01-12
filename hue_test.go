@@ -113,21 +113,31 @@ func TestStyleStringCombinations(t *testing.T) {
 
 func TestColour(t *testing.T) {
 	tests := []struct {
-		name  string    // Name of the test case
-		text  string    // The message to colour
-		want  string    // Expected (raw) output
-		style hue.Style // The style to apply
+		name    string    // Name of the test case
+		text    string    // The message to colour
+		want    string    // Expected (raw) output
+		enabled bool      // What to set hue.Enabled to
+		style   hue.Style // The style to apply
 	}{
 		{
-			name:  "basic",
-			text:  "hello",
-			style: hue.Green,
-			want:  "\x1b[32mhello\x1b[0m",
+			name:    "basic",
+			text:    "hello",
+			style:   hue.Green,
+			enabled: true,
+			want:    "\x1b[32mhello\x1b[0m",
+		},
+		{
+			name:    "basic",
+			text:    "hello",
+			style:   hue.Green,
+			enabled: false,
+			want:    "hello",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			hue.Enabled = tt.enabled
 			got := strconv.Quote(tt.style.Sprint(tt.text))
 			want := strconv.Quote(tt.want)
 
