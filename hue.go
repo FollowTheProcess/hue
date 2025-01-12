@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync/atomic"
 
 	"golang.org/x/term"
 )
@@ -29,7 +30,16 @@ const (
 // performance penalty is the only downside vs the normal case of < 6.
 const numStyles = 6
 
-// Enabled defines whether the output from this package is colourised. It defaults to automatic
+// disabled is whether this package is turned off and output should be uncoloured.
+//
+// It defaults to automatic detection.
+var disabled atomic.Bool
+
+func init() {
+	disabled.Store(autoDisabled())
+}
+
+// Enable defines whether the output from this package is colourised. It defaults to automatic
 // detection based on a number of attributes:
 //   - The value of $NO_COLOR and/or $FORCE_COLOR
 //   - The value of $TERM (xterm enables colour)
@@ -37,7 +47,27 @@ const numStyles = 6
 //
 // This means that hue should do a reasonable job of auto-detecting when to colourise output
 // and should not write escape sequences when piping between processes or when writing to files etc.
-var Enabled bool = defaultEnabled()
+//
+// This function may be called to bypass the above detection and force colourisation in all cases. It
+// may be called safely from concurrent goroutines.
+func Enable() {
+	disabled.Store(false)
+}
+
+// Disable defines whether the output from this package is colourised. It defaults to automatic
+// detection based on a number of attributes:
+//   - The value of $NO_COLOR and/or $FORCE_COLOR
+//   - The value of $TERM (xterm enables colour)
+//   - Whether [os.Stdout] is pointing to a terminal
+//
+// This means that hue should do a reasonable job of auto-detecting when to colourise output
+// and should not write escape sequences when piping between processes or when writing to files etc.
+//
+// This function may be called to bypass the above detection and disable colourisation in all cases. It
+// may be called safely from concurrent goroutines.
+func Disable() {
+	disabled.Store(true)
+}
 
 // Style is a terminal style. It can be a mix of colours and other attributes
 // describing the entire appearance of a piece of text.
@@ -227,7 +257,7 @@ func (s Style) Sprintln(a ...any) string {
 
 // wrap wraps text with the styles escape and reset sequences.
 func (s Style) wrap(text string) string {
-	if !Enabled {
+	if disabled.Load() {
 		return text
 	}
 
@@ -238,8 +268,9 @@ func (s Style) wrap(text string) string {
 	return escape + code + "m" + text + reset
 }
 
-// defaultEnabled performs checks to determine the auto-detect value for [Enabled].
-func defaultEnabled() bool {
+// autoDisabled performs checks to auto detect whether or not this package should be disabled
+// based on it's environment.
+func autoDisabled() bool {
 	// Note: did some digging to see how to avoid potentially 3 different syscalls to get env vars
 	// went down a bit of a rabbit hole. It turns out that under the hood, os.Getenv is guarded by a sync.Once
 	// so only on the first call to Getenv are we actually making a syscall, all future calls just use the
@@ -247,25 +278,25 @@ func defaultEnabled() bool {
 
 	// $FORCE_COLOR overrides everything
 	if os.Getenv("FORCE_COLOR") != "" {
-		return true
+		return false // as in, should not be disabled
 	}
 
 	// $NO_COLOR is next
 	if os.Getenv("NO_COLOR") != "" {
-		return false
+		return true // no color means we should be disabled
 	}
 
 	// If the $TERM env var looks like xtermXXX then it's
 	// probably safe e.g. xterm-256-color, xterm-ghostty etc.
 	if strings.HasPrefix(os.Getenv("TERM"), "xterm") {
-		return true
+		return false
 	}
 
 	// Finally check if stdout's file descriptor is a terminal (best effort)
 	if term.IsTerminal(int(os.Stdout.Fd())) {
-		return true
+		return false
 	}
 
 	// Can't detect otherwise so be safe and disable colour
-	return false
+	return true
 }
