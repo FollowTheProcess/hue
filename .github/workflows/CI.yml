@@ -18,3 +18,5 @@ jobs:
     permissions:
       contents: read
     uses: FollowTheProcess/ci/.github/workflows/Go.yml@v1
+    with:
+      test-summary: false # Piping does weird things for colour tests
