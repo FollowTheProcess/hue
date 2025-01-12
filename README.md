@@ -36,6 +36,24 @@ go get github.com/FollowTheProcess/hue@latest
 
 ## Quickstart
 
+Colours and styles in `hue` are implemented as a bitmask and are therefore compile time constants! This means you can do this...
+
+```go
+package main
+
+import "github.com/FollowTheProcess/hue"
+
+const (
+    success = hue.Green | hue.Bold
+    failure = hue.Red | hue.Underline
+)
+
+func main() {
+    success.Println("It worked!")
+    failure.Println("Not really")
+}
+```
+
 ### Credits
 
 This package was created with [copier] and the [FollowTheProcess/go_copier] project template.
