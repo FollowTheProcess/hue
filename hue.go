@@ -213,8 +213,10 @@ func (s Style) Fprintf(w io.Writer, format string, a ...any) (n int, err error) 
 // added between operands and a newline is appended. It returns the number of bytes written
 // and any write error encountered.
 func (s Style) Fprintln(w io.Writer, a ...any) (n int, err error) {
-	text := s.wrap(fmt.Sprintln(a...))
-	return fmt.Fprint(w, text)
+	// Important to add the newline at the very end so wrap the raw text
+	// then do Fprintln
+	text := s.wrap(fmt.Sprint(a...))
+	return fmt.Fprintln(w, text)
 }
 
 // Print formats using the default formats for its operands and writes to [os.Stdout]. Spaces are
@@ -251,8 +253,10 @@ func (s Style) Sprintf(format string, a ...any) string {
 // Sprintln formats using the default formats for its operands and returns the resulting string. Spaces are always
 // added between operands and a newline is appended.
 func (s Style) Sprintln(a ...any) string {
-	text := s.wrap(fmt.Sprintln(a...))
-	return text
+	// Important to add the newline at the very end so wrap the raw text
+	// then do Sprintln
+	text := s.wrap(fmt.Sprint(a...))
+	return fmt.Sprintln(text)
 }
 
 // wrap wraps text with the styles escape and reset sequences.
