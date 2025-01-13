@@ -22,12 +22,34 @@ The dominant package in this space for Go is [fatih/color] which I've used befor
 - Support both `$NO_COLOR` and `$FORCE_COLOR`
 - Smaller public interface
 - Make it so simple you don't even have to think about it
-- Zero allocations (may not be possible)
+- As low performance overhead as possible
 
 Like most libraries that do this sort of thing, hue uses [ANSI Escape Codes] to instruct the terminal emulator to render particular colours. See [here](https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797) for a helpful breakdown of how these codes work.
 
 > [!NOTE]
 > Windows support is best effort, I don't own or use any windows devices so it's not a super high priority for me. If Windows support is important to you, you should use [fatih/color]
+
+### Performance
+
+`hue` has been designed such that each new style is not a new allocated struct, plus the use of bitmasks to encode style leads to some nice performance benefits!
+
+This benchmark (run as part of hue's CI) measures returning a bold cyan string, one from [fatih/color] and one from `hue`:
+
+```plaintext
+❯ go test ./... -run None -benchmem -bench BenchmarkColour
+goos: darwin
+goarch: arm64
+pkg: github.com/FollowTheProcess/hue
+cpu: Apple M1 Pro
+BenchmarkColour/hue-8            7497607               138.7 ns/op            80 B/op          3 allocs/op
+BenchmarkColour/color-8          2893501               415.2 ns/op           248 B/op         12 allocs/op
+PASS
+ok      github.com/FollowTheProcess/hue 3.044s
+```
+
+- Nearly 70% faster
+- Nearly 70% less bytes copied
+- 9 fewer heap allocations!
 
 ## Installation
 
