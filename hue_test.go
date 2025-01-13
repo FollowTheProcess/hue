@@ -304,6 +304,233 @@ func TestPrintf(t *testing.T) {
 	}
 }
 
+func TestPrintln(t *testing.T) {
+	tests := []struct {
+		name    string    // Name of the test case
+		input   string    // Text to style
+		want    string    // Expected result including escape sequences
+		enabled bool      // Whether hue is enabled
+		style   hue.Style // Style under test
+	}{
+		{
+			name:    "basic",
+			input:   "woah!",
+			style:   hue.Italic,
+			enabled: true,
+			want:    "\x1b[3mwoah!\n\x1b[0m",
+		},
+		{
+			name:    "many styles",
+			input:   "such wow",
+			style:   hue.BrightGreen | hue.Dim | hue.BlinkFast,
+			enabled: true,
+			want:    "\x1b[2;6;92msuch wow\n\x1b[0m",
+		},
+		{
+			name:    "basic disabled",
+			input:   "woah!",
+			style:   hue.BrightGreen,
+			enabled: false,
+			want:    "woah!\n",
+		},
+		{
+			name:    "many styles",
+			input:   "such wow",
+			style:   hue.BrightCyan | hue.Strikethrough | hue.BlinkSlow,
+			enabled: false,
+			want:    "such wow\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Ensure the behaviour is explicitly as requested
+			if tt.enabled {
+				hue.Enable()
+			} else {
+				hue.Disable()
+			}
+			stdout, _ := test.CaptureOutput(t, func() error {
+				_, err := tt.style.Println(tt.input)
+				return err
+			})
+
+			got := strconv.Quote(stdout)
+			want := strconv.Quote(tt.want)
+
+			test.Equal(t, got, want)
+		})
+	}
+}
+
+func TestSprint(t *testing.T) {
+	tests := []struct {
+		name    string    // Name of the test case
+		input   string    // Text to style
+		want    string    // Expected result including escape sequences
+		enabled bool      // Whether hue is enabled
+		style   hue.Style // Style under test
+	}{
+		{
+			name:    "basic",
+			input:   "woah!",
+			style:   hue.Blue,
+			enabled: true,
+			want:    "\x1b[34mwoah!\x1b[0m",
+		},
+		{
+			name:    "many styles",
+			input:   "such wow",
+			style:   hue.BrightMagenta | hue.Underline | hue.GreenBackground,
+			enabled: true,
+			want:    "\x1b[4;42;95msuch wow\x1b[0m",
+		},
+		{
+			name:    "basic disabled",
+			input:   "woah!",
+			style:   hue.BrightWhite,
+			enabled: false,
+			want:    "woah!",
+		},
+		{
+			name:    "many styles",
+			input:   "such wow",
+			style:   hue.BrightMagenta | hue.Underline | hue.GreenBackground,
+			enabled: false,
+			want:    "such wow",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Ensure the behaviour is explicitly as requested
+			if tt.enabled {
+				hue.Enable()
+			} else {
+				hue.Disable()
+			}
+
+			got := strconv.Quote(tt.style.Sprint(tt.input))
+			want := strconv.Quote(tt.want)
+
+			test.Equal(t, got, want)
+		})
+	}
+}
+
+func TestSprintf(t *testing.T) {
+	tests := []struct {
+		name    string    // Name of the test case
+		input   string    // Text to style
+		want    string    // Expected result including escape sequences
+		args    []any     // Args to Sprintf
+		enabled bool      // Whether hue is enabled
+		style   hue.Style // Style under test
+	}{
+		{
+			name:    "basic",
+			input:   "hello %s",
+			args:    []any{"hue"},
+			style:   hue.BrightGreenBackground,
+			enabled: true,
+			want:    "\x1b[102mhello hue\x1b[0m",
+		},
+		{
+			name:    "many styles",
+			input:   "how many styles %s? %d",
+			args:    []any{"hue", 4},
+			style:   hue.Blue | hue.BrightGreenBackground | hue.Underline | hue.BlinkSlow,
+			enabled: true,
+			want:    "\x1b[4;5;34;102mhow many styles hue? 4\x1b[0m",
+		},
+		{
+			name:    "basic disabled",
+			input:   "hello %s",
+			args:    []any{"hue"},
+			style:   hue.BrightYellow,
+			enabled: false,
+			want:    "hello hue",
+		},
+		{
+			name:    "many styles disabled",
+			input:   "how many styles %s? %d",
+			args:    []any{"hue", 4},
+			style:   hue.BrightRed | hue.BrightBlackBackground | hue.Underline | hue.Dim,
+			enabled: false,
+			want:    "how many styles hue? 4",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Ensure the behaviour is explicitly as requested
+			if tt.enabled {
+				hue.Enable()
+			} else {
+				hue.Disable()
+			}
+
+			got := strconv.Quote(tt.style.Sprintf(tt.input, tt.args...))
+			want := strconv.Quote(tt.want)
+
+			test.Equal(t, got, want)
+		})
+	}
+}
+
+func TestSprintln(t *testing.T) {
+	tests := []struct {
+		name    string    // Name of the test case
+		input   string    // Text to style
+		want    string    // Expected result including escape sequences
+		enabled bool      // Whether hue is enabled
+		style   hue.Style // Style under test
+	}{
+		{
+			name:    "basic",
+			input:   "woah!",
+			style:   hue.White,
+			enabled: true,
+			want:    "\x1b[37mwoah!\n\x1b[0m",
+		},
+		{
+			name:    "many styles",
+			input:   "such wow",
+			style:   hue.BrightMagenta | hue.Reverse | hue.GreenBackground,
+			enabled: true,
+			want:    "\x1b[7;42;95msuch wow\n\x1b[0m",
+		},
+		{
+			name:    "basic disabled",
+			input:   "woah!",
+			style:   hue.BrightWhite,
+			enabled: false,
+			want:    "woah!\n",
+		},
+		{
+			name:    "many styles",
+			input:   "such wow",
+			style:   hue.BrightMagenta | hue.Underline | hue.GreenBackground,
+			enabled: false,
+			want:    "such wow\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Ensure the behaviour is explicitly as requested
+			if tt.enabled {
+				hue.Enable()
+			} else {
+				hue.Disable()
+			}
+
+			got := strconv.Quote(tt.style.Sprintln(tt.input))
+			want := strconv.Quote(tt.want)
+
+			test.Equal(t, got, want)
+		})
+	}
+}
+
 func TestStyleCode(t *testing.T) {
 	tests := []struct {
 		name  string    // Name of the test case
