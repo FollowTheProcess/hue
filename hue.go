@@ -252,7 +252,7 @@ func (s Style) Sprintf(format string, a ...any) string {
 // added between operands and a newline is appended.
 func (s Style) Sprintln(a ...any) string {
 	text := s.wrap(fmt.Sprintln(a...))
-	return fmt.Sprintln(text)
+	return text
 }
 
 // wrap wraps text with the styles escape and reset sequences.
