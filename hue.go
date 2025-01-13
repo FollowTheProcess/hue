@@ -121,51 +121,6 @@ const (
 	maxStyle
 )
 
-// styleStrings is a map of the style to it's escape sequence digit.
-var styleStrings = map[Style]string{ //nolint: exhaustive // We don't need maxStyle in here it's just a marker
-	Bold:                    "1",
-	Dim:                     "2",
-	Italic:                  "3",
-	Underline:               "4",
-	BlinkSlow:               "5",
-	BlinkFast:               "6",
-	Reverse:                 "7",
-	Hidden:                  "8",
-	Strikethrough:           "9",
-	Black:                   "30",
-	Red:                     "31",
-	Green:                   "32",
-	Yellow:                  "33",
-	Blue:                    "34",
-	Magenta:                 "35",
-	Cyan:                    "36",
-	White:                   "37",
-	BlackBackground:         "40",
-	RedBackground:           "41",
-	GreenBackground:         "42",
-	YellowBackground:        "43",
-	BlueBackground:          "44",
-	MagentaBackground:       "45",
-	CyanBackground:          "46",
-	WhiteBackground:         "47",
-	BrightBlack:             "90",
-	BrightRed:               "91",
-	BrightGreen:             "92",
-	BrightYellow:            "93",
-	BrightBlue:              "94",
-	BrightMagenta:           "95",
-	BrightCyan:              "96",
-	BrightWhite:             "97",
-	BrightBlackBackground:   "100",
-	BrightRedBackground:     "101",
-	BrightGreenBackground:   "102",
-	BrightYellowBackground:  "103",
-	BrightBlueBackground:    "104",
-	BrightMagentaBackground: "105",
-	BrightCyanBackground:    "106",
-	BrightWhiteBackground:   "107",
-}
-
 // Code returns the ANSI escape code for the given style, minus the escape
 // characters '\x1b[' and 'm' which mark the start and end of the ANSI sequence; respectively.
 //
@@ -173,14 +128,102 @@ var styleStrings = map[Style]string{ //nolint: exhaustive // We don't need maxSt
 // but it is occasionally useful for debugging.
 //
 // Code returns an error if the style is invalid.
-func (s Style) Code() (string, error) {
+func (s Style) Code() (string, error) { //nolint: gocyclo // switch case is significantly faster than a map and avoids an allocation
 	if s >= maxStyle || s == 0 {
 		return "", fmt.Errorf("invalid style: Style(%d)", s)
 	}
-	if str, ok := styleStrings[s]; ok {
-		return str, nil
+
+	// Note: this initially used a map lookup as I thought having a big switch case
+	// would be slower.
+	// Turns out it's *significantly* faster (nearly 70% in the single style case, and ~30% in the composite style case)
+	// I guess it turns into a jump table under the hood so is super fast, and no map means no allocation
+
+	switch s { //nolint: exhaustive // We actually don't want this one to be exhaustive
+	case Bold:
+		return "1", nil
+	case Dim:
+		return "2", nil
+	case Italic:
+		return "3", nil
+	case Underline:
+		return "4", nil
+	case BlinkSlow:
+		return "5", nil
+	case BlinkFast:
+		return "6", nil
+	case Reverse:
+		return "7", nil
+	case Hidden:
+		return "8", nil
+	case Strikethrough:
+		return "9", nil
+	case Black:
+		return "30", nil
+	case Red:
+		return "31", nil
+	case Green:
+		return "32", nil
+	case Yellow:
+		return "33", nil
+	case Blue:
+		return "34", nil
+	case Magenta:
+		return "35", nil
+	case Cyan:
+		return "36", nil
+	case White:
+		return "37", nil
+	case BlackBackground:
+		return "40", nil
+	case RedBackground:
+		return "41", nil
+	case GreenBackground:
+		return "42", nil
+	case YellowBackground:
+		return "43", nil
+	case BlueBackground:
+		return "44", nil
+	case MagentaBackground:
+		return "45", nil
+	case CyanBackground:
+		return "46", nil
+	case WhiteBackground:
+		return "47", nil
+	case BrightBlack:
+		return "90", nil
+	case BrightRed:
+		return "91", nil
+	case BrightGreen:
+		return "92", nil
+	case BrightYellow:
+		return "93", nil
+	case BrightBlue:
+		return "94", nil
+	case BrightMagenta:
+		return "95", nil
+	case BrightCyan:
+		return "96", nil
+	case BrightWhite:
+		return "97", nil
+	case BrightBlackBackground:
+		return "100", nil
+	case BrightRedBackground:
+		return "101", nil
+	case BrightGreenBackground:
+		return "102", nil
+	case BrightYellowBackground:
+		return "103", nil
+	case BrightBlueBackground:
+		return "104", nil
+	case BrightMagentaBackground:
+		return "105", nil
+	case BrightCyanBackground:
+		return "106", nil
+	case BrightWhiteBackground:
+		return "107", nil
 	}
 
+	// Combinations
 	styles := make([]string, 0, numStyles)
 	for style := Bold; style <= BrightWhiteBackground; style <<= 1 {
 		// If the given style has this style bit set, add its code to the string
