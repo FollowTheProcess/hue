@@ -81,6 +81,17 @@ tasks:
     cmds:
       - pkgsite -open
 
+  demo:
+    desc: Render the demo gifs
+    sources:
+      - ./docs/src/*.tape
+      - "**/*.go"
+    preconditions:
+      - sh: command -v vhs
+        msg: vhs not installed, see https://github.com/charmbracelet/vhs
+    cmds:
+      - for file in ./docs/src/*.tape; do vhs "$file"; done
+
   cov:
     desc: Calculate test coverage and render the html
     generates:
