@@ -30,19 +30,20 @@ const (
 // performance penalty is the only downside vs the normal case of < 6.
 const numStyles = 6
 
-// disabled is whether this package is turned off and output should be uncoloured.
+// enabled controls whether this package should output colourised text (true) or not (false).
 //
-// It defaults to automatic detection.
-var disabled atomic.Bool
+// It defaults to automatic detection, but can be explicitly set by the user via [Enabled].
+var enabled atomic.Bool
 
 func init() {
 	// Auto-determine whether or not colour should be enabled on package startup. FWIW I think
 	// init is kind of a smell but it is quite useful for this
-	disabled.Store(autoDisabled())
+	enabled.Store(autoDetectEnabled())
 }
 
-// Enable defines whether the output from this package is colourised. It defaults to automatic
-// detection based on a number of attributes:
+// Enabled sets whether the output from this package is colourised.
+//
+// Hue defaults to automatic detection based on a number of attributes:
 //   - The value of $NO_COLOR and/or $FORCE_COLOR
 //   - The value of $TERM (xterm enables colour)
 //   - Whether [os.Stdout] is pointing to a terminal
@@ -50,25 +51,12 @@ func init() {
 // This means that hue should do a reasonable job of auto-detecting when to colourise output
 // and should not write escape sequences when piping between processes or when writing to files etc.
 //
-// This function may be called to bypass the above detection and force colourisation in all cases. It
-// may be called safely from concurrent goroutines.
-func Enable() {
-	disabled.Store(false)
-}
-
-// Disable defines whether the output from this package is colourised. It defaults to automatic
-// detection based on a number of attributes:
-//   - The value of $NO_COLOR and/or $FORCE_COLOR
-//   - The value of $TERM (xterm enables colour)
-//   - Whether [os.Stdout] is pointing to a terminal
+// This function may be called to bypass the above detection and explicitly set the value, useful in CLI
+// applications where a --no-color flag might be expected.
 //
-// This means that hue should do a reasonable job of auto-detecting when to colourise output
-// and should not write escape sequences when piping between processes or when writing to files etc.
-//
-// This function may be called to bypass the above detection and disable colourisation in all cases. It
-// may be called safely from concurrent goroutines.
-func Disable() {
-	disabled.Store(true)
+// Enabled may be called safely from concurrently executing goroutines.
+func Enabled(v bool) {
+	enabled.Store(v)
 }
 
 // Style is a terminal style to be applied to a piece of text, shown on a terminal.
@@ -317,7 +305,7 @@ func (s Style) Sprintln(a ...any) string {
 
 // wrap wraps text with the styles escape and reset sequences.
 func (s Style) wrap(text string) string {
-	if disabled.Load() {
+	if !enabled.Load() {
 		return text
 	}
 
@@ -328,9 +316,9 @@ func (s Style) wrap(text string) string {
 	return escape + code + "m" + text + reset
 }
 
-// autoDisabled performs checks to auto detect whether or not this package should be disabled
-// based on it's environment.
-func autoDisabled() bool {
+// autoDetectEnabled performs checks to auto detect whether or not this package should output
+// colourised text by default based on it's execution environment.
+func autoDetectEnabled() bool {
 	// Note: did some digging to see how to avoid potentially 3 different syscalls to get env vars
 	// went down a bit of a rabbit hole. It turns out that under the hood, os.Getenv is guarded by a sync.Once
 	// so only on the first call to Getenv are we actually making a syscall, all future calls just use the
@@ -338,25 +326,25 @@ func autoDisabled() bool {
 
 	// $FORCE_COLOR overrides everything
 	if os.Getenv("FORCE_COLOR") != "" {
-		return false // as in, should not be disabled
+		return true
 	}
 
 	// $NO_COLOR is next
 	if os.Getenv("NO_COLOR") != "" {
-		return true // no color means we should be disabled
+		return false
 	}
 
 	// If the $TERM env var looks like xtermXXX then it's
 	// probably safe e.g. xterm-256-color, xterm-ghostty etc.
 	if strings.HasPrefix(os.Getenv("TERM"), "xterm") {
-		return false
+		return true
 	}
 
 	// Finally check if stdout's file descriptor is a terminal (best effort)
 	if term.IsTerminal(int(os.Stdout.Fd())) {
-		return false
+		return true
 	}
 
 	// Can't detect otherwise so be safe and disable colour
-	return true
+	return false
 }

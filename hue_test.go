@@ -52,11 +52,7 @@ func TestFprint(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the behaviour is explicitly as requested
-			if tt.enabled {
-				hue.Enable()
-			} else {
-				hue.Disable()
-			}
+			hue.Enabled(tt.enabled)
 			buf := &bytes.Buffer{}
 			tt.style.Fprint(buf, tt.input)
 
@@ -115,11 +111,7 @@ func TestFprintf(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the behaviour is explicitly as requested
-			if tt.enabled {
-				hue.Enable()
-			} else {
-				hue.Disable()
-			}
+			hue.Enabled(tt.enabled)
 			buf := &bytes.Buffer{}
 			tt.style.Fprintf(buf, tt.input, tt.args...)
 
@@ -173,11 +165,7 @@ func TestFprintln(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the behaviour is explicitly as requested
-			if tt.enabled {
-				hue.Enable()
-			} else {
-				hue.Disable()
-			}
+			hue.Enabled(tt.enabled)
 			buf := &bytes.Buffer{}
 			tt.style.Fprintln(buf, tt.input)
 
@@ -231,11 +219,7 @@ func TestPrint(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the behaviour is explicitly as requested
-			if tt.enabled {
-				hue.Enable()
-			} else {
-				hue.Disable()
-			}
+			hue.Enabled(tt.enabled)
 
 			stdout := captureOutput(t, func() error {
 				_, err := tt.style.Print(tt.input)
@@ -297,11 +281,7 @@ func TestPrintf(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the behaviour is explicitly as requested
-			if tt.enabled {
-				hue.Enable()
-			} else {
-				hue.Disable()
-			}
+			hue.Enabled(tt.enabled)
 			stdout := captureOutput(t, func() error {
 				_, err := tt.style.Printf(tt.input, tt.args...)
 				return err
@@ -357,11 +337,7 @@ func TestPrintln(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the behaviour is explicitly as requested
-			if tt.enabled {
-				hue.Enable()
-			} else {
-				hue.Disable()
-			}
+			hue.Enabled(tt.enabled)
 			stdout := captureOutput(t, func() error {
 				_, err := tt.style.Println(tt.input)
 				return err
@@ -418,11 +394,7 @@ func TestSprint(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the behaviour is explicitly as requested
-			if tt.enabled {
-				hue.Enable()
-			} else {
-				hue.Disable()
-			}
+			hue.Enabled(tt.enabled)
 
 			got := strconv.Quote(tt.style.Sprint(tt.input))
 			want := strconv.Quote(tt.want)
@@ -479,11 +451,7 @@ func TestSprintf(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the behaviour is explicitly as requested
-			if tt.enabled {
-				hue.Enable()
-			} else {
-				hue.Disable()
-			}
+			hue.Enabled(tt.enabled)
 
 			got := strconv.Quote(tt.style.Sprintf(tt.input, tt.args...))
 			want := strconv.Quote(tt.want)
@@ -536,11 +504,7 @@ func TestSprintln(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the behaviour is explicitly as requested
-			if tt.enabled {
-				hue.Enable()
-			} else {
-				hue.Disable()
-			}
+			hue.Enabled(tt.enabled)
 
 			got := strconv.Quote(tt.style.Sprintln(tt.input))
 			want := strconv.Quote(tt.want)
@@ -601,7 +565,7 @@ func TestStyleCode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hue.Enable()
+			hue.Enabled(true)
 			got, err := tt.style.Code()
 			if err != nil {
 				t.Fatalf("Code() returned an error: %v", err)
@@ -631,7 +595,7 @@ func TestStyleError(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hue.Enable()
+			hue.Enabled(true)
 			got, err := tt.style.Code()
 			if err == nil {
 				t.Fatalf("expected an error, would have got %s", got)
@@ -675,7 +639,7 @@ func TestStyleCodeCombinations(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hue.Enable()
+			hue.Enabled(true)
 			got, err := tt.style.Code()
 			if err != nil {
 				t.Fatalf("Code() returned an error: %v", err)
@@ -756,7 +720,7 @@ func TestVisual(t *testing.T) {
 }
 
 func BenchmarkStyle(b *testing.B) {
-	hue.Enable()
+	hue.Enabled(true)
 	b.Run("simple", func(b *testing.B) {
 		style := hue.Cyan
 		for range b.N {
@@ -779,7 +743,7 @@ func BenchmarkStyle(b *testing.B) {
 }
 
 func BenchmarkColour(b *testing.B) {
-	hue.Enable()
+	hue.Enabled(true)
 	color.NoColor = false
 	b.Run("hue", func(b *testing.B) {
 		for range b.N {
