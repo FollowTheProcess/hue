@@ -20,7 +20,8 @@ The dominant package in this space for Go is [fatih/color] which I've used befor
 
 - Alignment/width of colourised text is maintained for [text/tabwriter]
 - Support both `$NO_COLOR` and `$FORCE_COLOR`
-- Smaller public interface, more simple
+- Smaller public interface
+- Make it so simple you don't even have to think about it
 - Zero allocations (may not be possible)
 
 Like most libraries that do this sort of thing, hue uses [ANSI Escape Codes] to instruct the terminal emulator to render particular colours. See [here](https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797) for a helpful breakdown of how these codes work.
