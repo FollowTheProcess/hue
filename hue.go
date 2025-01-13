@@ -71,8 +71,25 @@ func Disable() {
 	disabled.Store(true)
 }
 
-// Style is a terminal style. It can be a mix of colours and other attributes
-// describing the entire appearance of a piece of text.
+// Style is a terminal style to be applied to a piece of text, shown on a terminal.
+//
+// Styles are implemented in hue as bitflags so can be combined using the bitwise '|' operator,
+// for example to create an underlined, bold, cyan string:
+//
+//	style := hue.Cyan | hue.Bold | hue.Underline
+//
+// This also means styles can take advantage of Go's compile time constant mechanism
+// and be declared with const, meaning you can define your application's style once
+// and reuse it wherever you like:
+//
+//	const (
+//		success = hue.Green | hue.Bold
+//		failure = hue.Red | hue.Underline
+//		warning = hue.Yellow
+//	)
+//
+// Using arbitrary bitwise operators on a Style, or casting arbitrary uints to a Style will likely produce invalid
+// output so callers are advised to use only the declarations in this package.
 type Style uint
 
 const (
