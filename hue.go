@@ -80,8 +80,6 @@ const (
 	Dim                                       // Set dim/faint text mode, not all terminals support this mode
 	Italic                                    // Set italic text mode
 	Underline                                 // Set underline text mode
-	BlinkSlow                                 // Set blink mode with a slow repeat rate
-	BlinkFast                                 // Set blink mode with a fast repeat rate
 	Reverse                                   // Set reverse/inverse mode, this swaps foreground and background style configuration
 	Hidden                                    // Set hidden mode, this hides all text
 	Strikethrough                             // Set strikethrough mode
@@ -147,10 +145,6 @@ func (s Style) Code() (string, error) { //nolint: gocyclo // switch case is sign
 		return "3", nil
 	case Underline:
 		return "4", nil
-	case BlinkSlow:
-		return "5", nil
-	case BlinkFast:
-		return "6", nil
 	case Reverse:
 		return "7", nil
 	case Hidden:
