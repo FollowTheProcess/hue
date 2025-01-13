@@ -12,7 +12,7 @@ A simple, modern colour/style package for CLI applications in Go
 > [!WARNING]
 > **hue is in early development and is not yet ready for use**
 
-![caution](./img/caution.png)
+![demo](https://github.com/FollowTheProcess/hue/raw/main/docs/img/demo.gif)
 
 ## Project Description
 
