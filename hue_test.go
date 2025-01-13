@@ -2,11 +2,13 @@ package hue_test
 
 import (
 	"bytes"
+	"io"
+	"os"
 	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/FollowTheProcess/hue"
-	"github.com/FollowTheProcess/test"
 )
 
 func TestFprint(t *testing.T) {
@@ -60,7 +62,9 @@ func TestFprint(t *testing.T) {
 			got := strconv.Quote(buf.String())
 			want := strconv.Quote(tt.want)
 
-			test.Equal(t, got, want)
+			if got != want {
+				t.Errorf("\nGot:\t%v\nWanted:\t%v\n", got, want)
+			}
 		})
 	}
 }
@@ -121,7 +125,9 @@ func TestFprintf(t *testing.T) {
 			got := strconv.Quote(buf.String())
 			want := strconv.Quote(tt.want)
 
-			test.Equal(t, got, want)
+			if got != want {
+				t.Errorf("\nGot:\t%v\nWanted:\t%v\n", got, want)
+			}
 		})
 	}
 }
@@ -177,7 +183,9 @@ func TestFprintln(t *testing.T) {
 			got := strconv.Quote(buf.String())
 			want := strconv.Quote(tt.want)
 
-			test.Equal(t, got, want)
+			if got != want {
+				t.Errorf("\nGot:\t%v\nWanted:\t%v\n", got, want)
+			}
 		})
 	}
 }
@@ -228,7 +236,7 @@ func TestPrint(t *testing.T) {
 				hue.Disable()
 			}
 
-			stdout, _ := test.CaptureOutput(t, func() error {
+			stdout := captureOutput(t, func() error {
 				_, err := tt.style.Print(tt.input)
 				return err
 			})
@@ -236,7 +244,9 @@ func TestPrint(t *testing.T) {
 			got := strconv.Quote(stdout)
 			want := strconv.Quote(tt.want)
 
-			test.Equal(t, got, want)
+			if got != want {
+				t.Errorf("\nGot:\t%v\nWanted:\t%v\n", got, want)
+			}
 		})
 	}
 }
@@ -291,7 +301,7 @@ func TestPrintf(t *testing.T) {
 			} else {
 				hue.Disable()
 			}
-			stdout, _ := test.CaptureOutput(t, func() error {
+			stdout := captureOutput(t, func() error {
 				_, err := tt.style.Printf(tt.input, tt.args...)
 				return err
 			})
@@ -299,7 +309,9 @@ func TestPrintf(t *testing.T) {
 			got := strconv.Quote(stdout)
 			want := strconv.Quote(tt.want)
 
-			test.Equal(t, got, want)
+			if got != want {
+				t.Errorf("\nGot:\t%v\nWanted:\t%v\n", got, want)
+			}
 		})
 	}
 }
@@ -349,7 +361,7 @@ func TestPrintln(t *testing.T) {
 			} else {
 				hue.Disable()
 			}
-			stdout, _ := test.CaptureOutput(t, func() error {
+			stdout := captureOutput(t, func() error {
 				_, err := tt.style.Println(tt.input)
 				return err
 			})
@@ -357,7 +369,9 @@ func TestPrintln(t *testing.T) {
 			got := strconv.Quote(stdout)
 			want := strconv.Quote(tt.want)
 
-			test.Equal(t, got, want)
+			if got != want {
+				t.Errorf("\nGot:\t%v\nWanted:\t%v\n", got, want)
+			}
 		})
 	}
 }
@@ -412,7 +426,9 @@ func TestSprint(t *testing.T) {
 			got := strconv.Quote(tt.style.Sprint(tt.input))
 			want := strconv.Quote(tt.want)
 
-			test.Equal(t, got, want)
+			if got != want {
+				t.Errorf("\nGot:\t%v\nWanted:\t%v\n", got, want)
+			}
 		})
 	}
 }
@@ -471,7 +487,9 @@ func TestSprintf(t *testing.T) {
 			got := strconv.Quote(tt.style.Sprintf(tt.input, tt.args...))
 			want := strconv.Quote(tt.want)
 
-			test.Equal(t, got, want)
+			if got != want {
+				t.Errorf("\nGot:\t%v\nWanted:\t%v\n", got, want)
+			}
 		})
 	}
 }
@@ -526,7 +544,9 @@ func TestSprintln(t *testing.T) {
 			got := strconv.Quote(tt.style.Sprintln(tt.input))
 			want := strconv.Quote(tt.want)
 
-			test.Equal(t, got, want)
+			if got != want {
+				t.Errorf("\nGot:\t%v\nWanted:\t%v\n", got, want)
+			}
 		})
 	}
 }
@@ -584,8 +604,13 @@ func TestStyleCode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			hue.Enable()
 			got, err := tt.style.Code()
-			test.Ok(t, err)
-			test.Equal(t, got, tt.want)
+			if err != nil {
+				t.Fatalf("Code() returned an error: %v", err)
+			}
+
+			if got != tt.want {
+				t.Errorf("\nGot:\t%v\nWanted:\t%v\n", got, tt.want)
+			}
 		})
 	}
 }
@@ -609,7 +634,9 @@ func TestStyleError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			hue.Enable()
 			got, err := tt.style.Code()
-			test.Err(t, err, test.Context("would have got %s", got))
+			if err == nil {
+				t.Fatalf("expected an error, would have got %s", got)
+			}
 		})
 	}
 }
@@ -651,8 +678,13 @@ func TestStyleCodeCombinations(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			hue.Enable()
 			got, err := tt.style.Code()
-			test.Ok(t, err)
-			test.Equal(t, got, tt.want)
+			if err != nil {
+				t.Fatalf("Code() returned an error: %v", err)
+			}
+
+			if got != tt.want {
+				t.Errorf("\nGot:\t%v\nWanted:\t%v\n", got, tt.want)
+			}
 		})
 	}
 }
@@ -747,4 +779,71 @@ func BenchmarkStyle(b *testing.B) {
 			}
 		}
 	})
+}
+
+// captureOutput captures and returns data printed to [os.Stdout] and [os.Stderr] by the provided function fn, allowing
+// you to test functions that write to those streams and do not have an option to pass in an [io.Writer].
+//
+// If the provided function returns a non nil error, the test is failed with the error logged as the reason.
+//
+// If any error occurs capturing stdout or stderr, the test will also be failed with a descriptive log.
+//
+//	fn := func() error {
+//		fmt.Println("hello stdout")
+//		return nil
+//	}
+//
+//	stdout, stderr := test.CaptureOutput(t, fn)
+//	fmt.Print(stdout) // "hello stdout\n"
+//	fmt.Print(stderr) // ""
+func captureOutput(tb testing.TB, fn func() error) (stdout string) {
+	tb.Helper()
+
+	// Take copies of the original streams
+	oldStdout := os.Stdout
+
+	defer func() {
+		// Restore everything back to normal
+		os.Stdout = oldStdout
+	}()
+
+	stdoutReader, stdoutWriter, err := os.Pipe()
+	if err != nil {
+		tb.Fatalf("CaptureOutput: could not construct an os.Pipe(): %v", err)
+	}
+
+	// Set stdout and stderr streams to the pipe writers
+	os.Stdout = stdoutWriter
+
+	stdoutCapture := make(chan string)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	// Copy in goroutines to avoid blocking
+	go func(wg *sync.WaitGroup) {
+		defer func() {
+			close(stdoutCapture)
+			wg.Done()
+		}()
+		buf := &bytes.Buffer{}
+		if _, err := io.Copy(buf, stdoutReader); err != nil {
+			tb.Fatalf("CaptureOutput: failed to copy from stdout reader: %v", err)
+		}
+		stdoutCapture <- buf.String()
+	}(&wg)
+
+	// Call the test function that produces the output
+	if err := fn(); err != nil {
+		tb.Fatalf("CaptureOutput: user function returned an error: %v", err)
+	}
+
+	// Close the writers
+	stdoutWriter.Close()
+
+	capturedStdout := <-stdoutCapture
+
+	wg.Wait()
+
+	return capturedStdout
 }
