@@ -36,6 +36,8 @@ const numStyles = 6
 var disabled atomic.Bool
 
 func init() {
+	// Auto-determine whether or not colour should be enabled on package startup. FWIW I think
+	// init is kind of a smell but it is quite useful for this
 	disabled.Store(autoDisabled())
 }
 
