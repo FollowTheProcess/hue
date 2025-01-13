@@ -150,9 +150,9 @@ func TestFprintln(t *testing.T) {
 		{
 			name:    "many styles",
 			input:   "such wow",
-			style:   hue.BrightCyan | hue.Strikethrough | hue.BlinkSlow,
+			style:   hue.BrightCyan | hue.Strikethrough | hue.Italic,
 			enabled: true,
-			want:    "\x1b[5;9;96msuch wow\x1b[0m\n",
+			want:    "\x1b[3;9;96msuch wow\x1b[0m\n",
 		},
 		{
 			name:    "basic disabled",
@@ -162,9 +162,9 @@ func TestFprintln(t *testing.T) {
 			want:    "woah!\n",
 		},
 		{
-			name:    "many styles",
+			name:    "many styles disabled",
 			input:   "such wow",
-			style:   hue.BrightCyan | hue.Strikethrough | hue.BlinkSlow,
+			style:   hue.BrightCyan | hue.Strikethrough | hue.Italic,
 			enabled: false,
 			want:    "such wow\n",
 		},
@@ -334,9 +334,9 @@ func TestPrintln(t *testing.T) {
 		{
 			name:    "many styles",
 			input:   "such wow",
-			style:   hue.BrightGreen | hue.Dim | hue.BlinkFast,
+			style:   hue.BrightGreen | hue.Dim | hue.Underline,
 			enabled: true,
-			want:    "\x1b[2;6;92msuch wow\x1b[0m\n",
+			want:    "\x1b[2;4;92msuch wow\x1b[0m\n",
 		},
 		{
 			name:    "basic disabled",
@@ -346,9 +346,9 @@ func TestPrintln(t *testing.T) {
 			want:    "woah!\n",
 		},
 		{
-			name:    "many styles",
+			name:    "many styles disabled",
 			input:   "such wow",
-			style:   hue.BrightCyan | hue.Strikethrough | hue.BlinkSlow,
+			style:   hue.BrightCyan | hue.Strikethrough | hue.Bold,
 			enabled: false,
 			want:    "such wow\n",
 		},
@@ -454,9 +454,9 @@ func TestSprintf(t *testing.T) {
 			name:    "many styles",
 			input:   "how many styles %s? %d",
 			args:    []any{"hue", 4},
-			style:   hue.Blue | hue.BrightGreenBackground | hue.Underline | hue.BlinkSlow,
+			style:   hue.Blue | hue.BrightGreenBackground | hue.Underline | hue.Dim,
 			enabled: true,
-			want:    "\x1b[4;5;34;102mhow many styles hue? 4\x1b[0m",
+			want:    "\x1b[2;4;34;102mhow many styles hue? 4\x1b[0m",
 		},
 		{
 			name:    "basic disabled",
@@ -561,8 +561,6 @@ func TestStyleCode(t *testing.T) {
 		{name: "dim", style: hue.Dim, want: "2"},
 		{name: "italic", style: hue.Italic, want: "3"},
 		{name: "underline", style: hue.Underline, want: "4"},
-		{name: "blink slow", style: hue.BlinkSlow, want: "5"},
-		{name: "blink fast", style: hue.BlinkFast, want: "6"},
 		{name: "reverse", style: hue.Reverse, want: "7"},
 		{name: "hidden", style: hue.Hidden, want: "8"},
 		{name: "strikethrough", style: hue.Strikethrough, want: "9"},
@@ -669,8 +667,8 @@ func TestStyleCodeCombinations(t *testing.T) {
 		},
 		{
 			name:  "lots of everything",
-			style: hue.Blue | hue.Red | hue.BlackBackground | hue.BlinkFast | hue.Strikethrough | hue.Bold,
-			want:  "1;6;9;31;34;40",
+			style: hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold,
+			want:  "1;3;9;31;34;40",
 		},
 	}
 
@@ -700,8 +698,6 @@ func TestVisual(t *testing.T) {
 		{style: hue.Dim, text: "Dim"},
 		{style: hue.Italic, text: "Italic"},
 		{style: hue.Underline, text: "Underline"},
-		{style: hue.BlinkSlow, text: "BlinkSlow"},
-		{style: hue.BlinkFast, text: "BlinkFast"},
 		{style: hue.Reverse, text: "Reverse"},
 		{style: hue.Hidden, text: "Hidden"},
 		{style: hue.Strikethrough, text: "Strikethrough"},
