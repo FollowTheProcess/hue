@@ -16,7 +16,7 @@ A simple, modern colour/style package for CLI applications in Go
 The dominant package in this space for Go is [fatih/color] which I've used before and is very good! However, I want to see if I can make something that improves on it. Specifically I want to try and address the following:
 
 - Alignment/width of colourised text is maintained for [text/tabwriter]
-  - This is still TODO, I might just end up shipping a fork of tabwriter as part of this package that escapes ANSI sequences rather than deal with alignment
+  - Sort of... I cheated and shipped a fork of tabwriter with the right modifications to support ANSI colours (`hue/tabwriter`)
 - Support both `$NO_COLOR` and `$FORCE_COLOR`
 - Smaller public interface
 - Make it so simple you don't even have to think about it
