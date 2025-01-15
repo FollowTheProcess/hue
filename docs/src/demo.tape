@@ -72,7 +72,7 @@ Set TypingSpeed 100ms
 
 Type "go test -v . -run TestVisual" Sleep 500ms  Enter
 
-Sleep 6s
+Sleep 8s
 
 Type "clear" Sleep 500ms Enter
 
