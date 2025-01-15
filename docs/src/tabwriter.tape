@@ -56,7 +56,7 @@
 #   Show                            Show the subsequent commands in the output
 
 # Run from the repo root
-Output ./docs/img/demo.gif
+Output ./docs/img/tabwriter.gif
 
 Set FontSize 18
 Set FontFamily "GeistMono Nerd Font Mono"
@@ -70,7 +70,7 @@ Set MarginFill "#7983FF"
 Set BorderRadius 10
 Set TypingSpeed 100ms
 
-Type "go test -v . -run TestVisual" Sleep 500ms  Enter
+Type "go test -v ./tabwriter -run TestVisual" Sleep 500ms  Enter
 
 Sleep 6s
 
