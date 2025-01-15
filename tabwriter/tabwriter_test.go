@@ -8,10 +8,11 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"testing"
 
-	. "github.com/FollowTheProcess/hue/tabwriter"
+	"github.com/FollowTheProcess/hue"
+	"github.com/FollowTheProcess/hue/tabwriter"
 )
 
 type buffer struct {
@@ -25,30 +26,43 @@ func (b *buffer) clear() { b.a = b.a[0:0] }
 func (b *buffer) Write(buf []byte) (written int, err error) {
 	n := len(b.a)
 	m := len(buf)
-	if n+m <= cap(b.a) {
-		b.a = b.a[0 : n+m]
-		for i := 0; i < m; i++ {
-			b.a[n+i] = buf[i]
-		}
-	} else {
+	if !(n+m <= cap(b.a)) {
 		panic("buffer.Write: buffer too small")
+	}
+	b.a = b.a[0 : n+m]
+	for i := 0; i < m; i++ {
+		b.a[n+i] = buf[i]
 	}
 	return len(buf), nil
 }
 
 func (b *buffer) String() string { return string(b.a) }
 
-func write(t *testing.T, testname string, w *Writer, src string) {
+func write(t *testing.T, testname string, w *tabwriter.Writer, src string) {
+	t.Helper()
 	written, err := io.WriteString(w, src)
 	if err != nil {
 		t.Errorf("--- test: %s\n--- src:\n%q\n--- write error: %v\n", testname, src, err)
 	}
 	if written != len(src) {
-		t.Errorf("--- test: %s\n--- src:\n%q\n--- written = %d, len(src) = %d\n", testname, src, written, len(src))
+		t.Errorf(
+			"--- test: %s\n--- src:\n%q\n--- written = %d, len(src) = %d\n",
+			testname,
+			src,
+			written,
+			len(src),
+		)
 	}
 }
 
-func verify(t *testing.T, testname string, w *Writer, b *buffer, src, expected string) {
+func verify( //nolint: revive // argument-limit
+	t *testing.T,
+	testname string,
+	w *tabwriter.Writer,
+	b *buffer,
+	src, expected string,
+) {
+	t.Helper()
 	err := w.Flush()
 	if err != nil {
 		t.Errorf("--- test: %s\n--- src:\n%q\n--- flush error: %v\n", testname, src, err)
@@ -56,15 +70,29 @@ func verify(t *testing.T, testname string, w *Writer, b *buffer, src, expected s
 
 	res := b.String()
 	if res != expected {
-		t.Errorf("--- test: %s\n--- src:\n%q\n--- found:\n%q\n--- expected:\n%q\n", testname, src, res, expected)
+		t.Errorf(
+			"--- test: %s\n--- src:\n%q\n--- found:\n%q\n--- expected:\n%q\n",
+			testname,
+			src,
+			res,
+			expected,
+		)
 	}
 }
 
-func check(t *testing.T, testname string, minwidth, tabwidth, padding int, padchar byte, flags uint, src, expected string) {
+func check( //nolint: revive // argument-limit
+	t *testing.T,
+	testname string,
+	minwidth, tabwidth, padding int,
+	padchar byte,
+	flags uint,
+	src, expected string,
+) {
+	t.Helper()
 	var b buffer
 	b.init(1000)
 
-	var w Writer
+	var w tabwriter.Writer
 	w.Init(&b, minwidth, tabwidth, padding, padchar, flags)
 
 	// write all at once
@@ -96,377 +124,377 @@ func check(t *testing.T, testname string, minwidth, tabwidth, padding int, padch
 
 var tests = []struct {
 	testname                    string
-	minwidth, tabwidth, padding int
-	padchar                     byte
-	flags                       uint
 	src, expected               string
+	minwidth, tabwidth, padding int
+	flags                       uint
+	padchar                     byte
 }{
 	{
-		"1a",
-		8, 0, 1, '.', 0,
-		"",
-		"",
+		testname: "1a",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "",
+		expected: "",
 	},
 
 	{
-		"1a debug",
-		8, 0, 1, '.', Debug,
-		"",
-		"",
+		testname: "1a debug",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: tabwriter.Debug,
+		src:      "",
+		expected: "",
 	},
 
 	{
-		"1b esc stripped",
-		8, 0, 1, '.', StripEscape,
-		"\xff\xff",
-		"",
+		testname: "1b esc stripped",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: tabwriter.StripEscape,
+		src:      "\xff\xff",
+		expected: "",
 	},
 
 	{
-		"1b esc",
-		8, 0, 1, '.', 0,
-		"\xff\xff",
-		"\xff\xff",
+		testname: "1b esc",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "\xff\xff",
+		expected: "\xff\xff",
 	},
 
 	{
-		"1c esc stripped",
-		8, 0, 1, '.', StripEscape,
-		"\xff\t\xff",
-		"\t",
+		testname: "1c esc stripped",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: tabwriter.StripEscape,
+		src:      "\xff\t\xff",
+		expected: "\t",
 	},
 
 	{
-		"1c esc",
-		8, 0, 1, '.', 0,
-		"\xff\t\xff",
-		"\xff\t\xff",
+		testname: "1c esc",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "\xff\t\xff",
+		expected: "\xff\t\xff",
 	},
 
 	{
-		"1d esc stripped",
-		8, 0, 1, '.', StripEscape,
-		"\xff\"foo\t\n\tbar\"\xff",
-		"\"foo\t\n\tbar\"",
+		testname: "1d esc stripped",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: tabwriter.StripEscape,
+		src:      "\xff\"foo\t\n\tbar\"\xff",
+		expected: "\"foo\t\n\tbar\"",
 	},
 
 	{
-		"1d esc",
-		8, 0, 1, '.', 0,
-		"\xff\"foo\t\n\tbar\"\xff",
-		"\xff\"foo\t\n\tbar\"\xff",
+		testname: "1d esc",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "\xff\"foo\t\n\tbar\"\xff",
+		expected: "\xff\"foo\t\n\tbar\"\xff",
 	},
 
 	{
-		"1e esc stripped",
-		8, 0, 1, '.', StripEscape,
-		"abc\xff\tdef", // unterminated escape
-		"abc\tdef",
+		testname: "1e esc stripped",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: tabwriter.StripEscape,
+		src:      "abc\xff\tdef", // unterminated escape
+		expected: "abc\tdef",
 	},
 
 	{
-		"1e esc",
-		8, 0, 1, '.', 0,
-		"abc\xff\tdef", // unterminated escape
-		"abc\xff\tdef",
+		testname: "1e esc",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "abc\xff\tdef", // unterminated escape
+		expected: "abc\xff\tdef",
 	},
 
 	{
-		"1f esc ansi",
-		8, 0, 1, '.', 0,
-		"abc\033[\tdef", // unterminated ANSI escape sequence
-		"abc\033[\tdef",
+		testname: "1f esc ansi",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "abc\x1b[\tdef", // unterminated ANSI escape sequence
+		expected: "abc\x1b[\tdef",
 	},
 
 	{
-		"2",
-		8, 0, 1, '.', 0,
-		"\n\n\n",
-		"\n\n\n",
+		testname: "2",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "\n\n\n",
+		expected: "\n\n\n",
 	},
 
 	{
-		"3",
-		8, 0, 1, '.', 0,
-		"a\nb\nc",
-		"a\nb\nc",
+		testname: "3",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "a\nb\nc",
+		expected: "a\nb\nc",
 	},
 
 	{
-		"3 colors",
-		8, 0, 1, '.', 0,
-		"a\nb\n\033[93;41mc\033[0m",
-		"a\nb\n\033[93;41mc\033[0m",
+		testname: "3 colours",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "a\nb\n\x1b[93;41mc\x1b[0m",
+		expected: "a\nb\n\x1b[93;41mc\x1b[0m",
 	},
 
 	{
-		"4a",
-		8, 0, 1, '.', 0,
-		"\t", // '\t' terminates an empty cell on last line - nothing to print
-		"",
+		testname: "4a",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "\t", // '\t' terminates an empty cell on last line - nothing to print
+		expected: "",
 	},
 
 	{
-		"4b",
-		8, 0, 1, '.', AlignRight,
-		"\t", // '\t' terminates an empty cell on last line - nothing to print
-		"",
+		testname: "4b",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: tabwriter.AlignRight,
+		src:      "\t", // '\t' terminates an empty cell on last line - nothing to print
+		expected: "",
 	},
 
 	{
-		"5",
-		8, 0, 1, '.', 0,
-		"*\t*",
-		"*.......*",
+		testname: "5",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "*\t*",
+		expected: "*.......*",
 	},
 
 	{
-		"5b",
-		8, 0, 1, '.', 0,
-		"*\t*\n",
-		"*.......*\n",
+		testname: "5b",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "*\t*\n",
+		expected: "*.......*\n",
 	},
 
 	{
-		"5c",
-		8, 0, 1, '.', 0,
-		"*\t*\t",
-		"*.......*",
+		testname: "5c",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "*\t*\t",
+		expected: "*.......*",
 	},
 
 	{
-		"5c debug",
-		8, 0, 1, '.', Debug,
-		"*\t*\t",
-		"*.......|*",
+		testname: "5c debug",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: tabwriter.Debug,
+		src:      "*\t*\t",
+		expected: "*.......|*",
 	},
 
 	{
-		"5d",
-		8, 0, 1, '.', AlignRight,
-		"*\t*\t",
-		".......**",
+		testname: "5d",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: tabwriter.AlignRight,
+		src:      "*\t*\t",
+		expected: ".......**",
 	},
 
 	{
-		"6",
-		8, 0, 1, '.', 0,
-		"\t\n",
-		"........\n",
+		testname: "6",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "\t\n",
+		expected: "........\n",
 	},
 
 	{
-		"7a",
-		8, 0, 1, '.', 0,
-		"a) foo",
-		"a) foo",
+		testname: "7a",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "a) foo",
+		expected: "a) foo",
 	},
 
 	{
-		"7b",
-		8, 0, 1, ' ', 0,
-		"b) foo\tbar",
-		"b) foo  bar",
+		testname: "7b",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: ' ', flags: 0,
+		src:      "b) foo\tbar",
+		expected: "b) foo  bar",
 	},
 
 	{
-		"7b colors",
-		8, 0, 1, ' ', 0,
-		"b) \033[93;41mfoo\033[0m\tbar",
-		"b) \033[93;41mfoo\033[0m  bar",
+		testname: "7b colours",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: ' ', flags: 0,
+		src:      "b) \x1b[93;41mfoo\x1b[0m\tbar",
+		expected: "b) \x1b[93;41mfoo\x1b[0m  bar",
 	},
 
 	{
-		"7c",
-		8, 0, 1, '.', 0,
-		"c) foo\tbar\t",
-		"c) foo..bar",
+		testname: "7c",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "c) foo\tbar\t",
+		expected: "c) foo..bar",
 	},
 
 	{
-		"7c colors",
-		8, 0, 1, '.', 0,
-		"c) \033[93;41mfoo\033[0m\tbar\t",
-		"c) \033[93;41mfoo\033[0m..bar",
+		testname: "7c colours",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "c) \x1b[93;41mfoo\x1b[0m\tbar\t",
+		expected: "c) \x1b[93;41mfoo\x1b[0m..bar",
 	},
 
 	{
-		"7d",
-		8, 0, 1, '.', 0,
-		"d) foo\tbar\n",
-		"d) foo..bar\n",
+		testname: "7d",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "d) foo\tbar\n",
+		expected: "d) foo..bar\n",
 	},
 
 	{
-		"7d colors",
-		8, 0, 1, '.', 0,
-		"d) \033[93;41mfoo\033[0m\tbar\n",
-		"d) \033[93;41mfoo\033[0m..bar\n",
+		testname: "7d colours",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "d) \x1b[93;41mfoo\x1b[0m\tbar\n",
+		expected: "d) \x1b[93;41mfoo\x1b[0m..bar\n",
 	},
 
 	{
-		"7e",
-		8, 0, 1, '.', 0,
-		"e) foo\tbar\t\n",
-		"e) foo..bar.....\n",
+		testname: "7e",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "e) foo\tbar\t\n",
+		expected: "e) foo..bar.....\n",
 	},
 
 	{
-		"7e colors",
-		8, 0, 1, '.', 0,
-		"e) \033[93;41mfoo\033[0m\tbar\t\n",
-		"e) \033[93;41mfoo\033[0m..bar.....\n",
+		testname: "7e colours",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src:      "e) \x1b[93;41mfoo\x1b[0m\tbar\t\n",
+		expected: "e) \x1b[93;41mfoo\x1b[0m..bar.....\n",
 	},
 
 	{
-		"7f",
-		8, 0, 1, '.', FilterHTML,
-		"f) f&lt;o\t<b>bar</b>\t\n",
-		"f) f&lt;o..<b>bar</b>.....\n",
+		testname: "7f",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: tabwriter.FilterHTML,
+		src:      "f) f&lt;o\t<b>bar</b>\t\n",
+		expected: "f) f&lt;o..<b>bar</b>.....\n",
 	},
 
 	{
-		"7g",
-		8, 0, 1, '.', FilterHTML,
-		"g) f&lt;o\t<b>bar</b>\t non-terminated entity &amp",
-		"g) f&lt;o..<b>bar</b>..... non-terminated entity &amp",
+		testname: "7g",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: tabwriter.FilterHTML,
+		src:      "g) f&lt;o\t<b>bar</b>\t non-terminated entity &amp",
+		expected: "g) f&lt;o..<b>bar</b>..... non-terminated entity &amp",
 	},
 
 	{
-		"7g debug",
-		8, 0, 1, '.', FilterHTML | Debug,
-		"g) f&lt;o\t<b>bar</b>\t non-terminated entity &amp",
-		"g) f&lt;o..|<b>bar</b>.....| non-terminated entity &amp",
+		testname: "7g debug",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: tabwriter.FilterHTML | tabwriter.Debug,
+		src:      "g) f&lt;o\t<b>bar</b>\t non-terminated entity &amp",
+		expected: "g) f&lt;o..|<b>bar</b>.....| non-terminated entity &amp",
 	},
 
 	{
-		"8",
-		8, 0, 1, '*', 0,
-		"Hello, world!\n",
-		"Hello, world!\n",
+		testname: "8",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '*', flags: 0,
+		src:      "Hello, world!\n",
+		expected: "Hello, world!\n",
 	},
 
 	{
-		"9a",
-		1, 0, 0, '.', 0,
-		"1\t2\t3\t4\n" +
+		testname: "9a",
+		minwidth: 1, tabwidth: 0, padding: 0, padchar: '.', flags: 0,
+		src: "1\t2\t3\t4\n" +
 			"11\t222\t3333\t44444\n",
 
-		"1.2..3...4\n" +
+		expected: "1.2..3...4\n" +
 			"11222333344444\n",
 	},
 
 	{
-		"9b",
-		1, 0, 0, '.', FilterHTML,
-		"1\t2<!---\f--->\t3\t4\n" + // \f inside HTML is ignored
+		testname: "9b",
+		minwidth: 1, tabwidth: 0, padding: 0, padchar: '.', flags: tabwriter.FilterHTML,
+		src: "1\t2<!---\f--->\t3\t4\n" + // \f inside HTML is ignored
 			"11\t222\t3333\t44444\n",
 
-		"1.2<!---\f--->..3...4\n" +
+		expected: "1.2<!---\f--->..3...4\n" +
 			"11222333344444\n",
 	},
 
 	{
-		"9c",
-		1, 0, 0, '.', 0,
-		"1\t2\t3\t4\f" + // \f causes a newline and flush
+		testname: "9c",
+		minwidth: 1, tabwidth: 0, padding: 0, padchar: '.', flags: 0,
+		src: "1\t2\t3\t4\f" + // \f causes a newline and flush
 			"11\t222\t3333\t44444\n",
 
-		"1234\n" +
+		expected: "1234\n" +
 			"11222333344444\n",
 	},
 
 	{
-		"9c debug",
-		1, 0, 0, '.', Debug,
-		"1\t2\t3\t4\f" + // \f causes a newline and flush
+		testname: "9c debug",
+		minwidth: 1, tabwidth: 0, padding: 0, padchar: '.', flags: tabwriter.Debug,
+		src: "1\t2\t3\t4\f" + // \f causes a newline and flush
 			"11\t222\t3333\t44444\n",
 
-		"1|2|3|4\n" +
+		expected: "1|2|3|4\n" +
 			"---\n" +
 			"11|222|3333|44444\n",
 	},
 
 	{
-		"10a",
-		5, 0, 0, '.', 0,
-		"1\t2\t3\t4\n",
-		"1....2....3....4\n",
+		testname: "10a",
+		minwidth: 5, tabwidth: 0, padding: 0, padchar: '.', flags: 0,
+		src:      "1\t2\t3\t4\n",
+		expected: "1....2....3....4\n",
 	},
 
 	{
-		"10a colors",
-		5, 0, 0, '.', 0,
-		"1\t2\t\033[93;41m3\033[0m\t4\n",
-		"1....2....\033[93;41m3\033[0m....4\n",
+		testname: "10a colours",
+		minwidth: 5, tabwidth: 0, padding: 0, padchar: '.', flags: 0,
+		src:      "1\t2\t\x1b[93;41m3\x1b[0m\t4\n",
+		expected: "1....2....\x1b[93;41m3\x1b[0m....4\n",
 	},
 
 	{
-		"10b",
-		5, 0, 0, '.', 0,
-		"1\t2\t3\t4\t\n",
-		"1....2....3....4....\n",
+		testname: "10b",
+		minwidth: 5, tabwidth: 0, padding: 0, padchar: '.', flags: 0,
+		src:      "1\t2\t3\t4\t\n",
+		expected: "1....2....3....4....\n",
 	},
 
 	{
-		"10b colors",
-		5, 0, 0, '.', 0,
-		"1\t2\t\033[93;41m3\033[0m\t4\t\n",
-		"1....2....\033[93;41m3\033[0m....4....\n",
+		testname: "10b colours",
+		minwidth: 5, tabwidth: 0, padding: 0, padchar: '.', flags: 0,
+		src:      "1\t2\t\x1b[93;41m3\x1b[0m\t4\t\n",
+		expected: "1....2....\x1b[93;41m3\x1b[0m....4....\n",
 	},
 
 	{
-		"11",
-		8, 0, 1, '.', 0,
-		"本\tb\tc\n" +
+		testname: "11",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '.', flags: 0,
+		src: "本\tb\tc\n" +
 			"aa\t\u672c\u672c\u672c\tcccc\tddddd\n" +
 			"aaa\tbbbb\n",
 
-		"本.......b.......c\n" +
+		expected: "本.......b.......c\n" +
 			"aa......本本本.....cccc....ddddd\n" +
 			"aaa.....bbbb\n",
 	},
 
 	{
-		"12a",
-		8, 0, 1, ' ', AlignRight,
-		"a\tè\tc\t\n" +
+		testname: "12a",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: ' ', flags: tabwriter.AlignRight,
+		src: "a\tè\tc\t\n" +
 			"aa\tèèè\tcccc\tddddd\t\n" +
 			"aaa\tèèèè\t\n",
 
-		"       a       è       c\n" +
+		expected: "       a       è       c\n" +
 			"      aa     èèè    cccc   ddddd\n" +
 			"     aaa    èèèè\n",
 	},
 
 	{
-		"12b",
-		2, 0, 0, ' ', 0,
-		"a\tb\tc\n" +
+		testname: "12b",
+		minwidth: 2, tabwidth: 0, padding: 0, padchar: ' ', flags: 0,
+		src: "a\tb\tc\n" +
 			"aa\tbbb\tcccc\n" +
 			"aaa\tbbbb\n",
 
-		"a  b  c\n" +
+		expected: "a  b  c\n" +
 			"aa bbbcccc\n" +
 			"aaabbbb\n",
 	},
 
 	{
-		"12c",
-		8, 0, 1, '_', 0,
-		"a\tb\tc\n" +
+		testname: "12c",
+		minwidth: 8, tabwidth: 0, padding: 1, padchar: '_', flags: 0,
+		src: "a\tb\tc\n" +
 			"aa\tbbb\tcccc\n" +
 			"aaa\tbbbb\n",
 
-		"a_______b_______c\n" +
+		expected: "a_______b_______c\n" +
 			"aa______bbb_____cccc\n" +
 			"aaa_____bbbb\n",
 	},
 
 	{
-		"13a",
-		4, 0, 1, '-', 0,
-		"4444\t日本語\t22\t1\t333\n" +
+		testname: "13a",
+		minwidth: 4, tabwidth: 0, padding: 1, padchar: '-', flags: 0,
+		src: "4444\t日本語\t22\t1\t333\n" +
 			"999999999\t22\n" +
 			"7\t22\n" +
 			"\t\t\t88888888\n" +
@@ -474,7 +502,7 @@ var tests = []struct {
 			"666666\t666666\t666666\t4444\n" +
 			"1\t1\t999999999\t0000000000\n",
 
-		"4444------日本語-22--1---333\n" +
+		expected: "4444------日本語-22--1---333\n" +
 			"999999999-22\n" +
 			"7---------22\n" +
 			"------------------88888888\n" +
@@ -484,9 +512,9 @@ var tests = []struct {
 	},
 
 	{
-		"13b",
-		4, 0, 3, '.', 0,
-		"4444\t333\t22\t1\t333\n" +
+		testname: "13b",
+		minwidth: 4, tabwidth: 0, padding: 3, padchar: '.', flags: 0,
+		src: "4444\t333\t22\t1\t333\n" +
 			"999999999\t22\n" +
 			"7\t22\n" +
 			"\t\t\t88888888\n" +
@@ -494,7 +522,7 @@ var tests = []struct {
 			"666666\t666666\t666666\t4444\n" +
 			"1\t1\t999999999\t0000000000\n",
 
-		"4444........333...22...1...333\n" +
+		expected: "4444........333...22...1...333\n" +
 			"999999999...22\n" +
 			"7...........22\n" +
 			"....................88888888\n" +
@@ -504,9 +532,9 @@ var tests = []struct {
 	},
 
 	{
-		"13c",
-		8, 8, 1, '\t', FilterHTML,
-		"4444\t333\t22\t1\t333\n" +
+		testname: "13c",
+		minwidth: 8, tabwidth: 8, padding: 1, padchar: '\t', flags: tabwriter.FilterHTML,
+		src: "4444\t333\t22\t1\t333\n" +
 			"999999999\t22\n" +
 			"7\t22\n" +
 			"\t\t\t88888888\n" +
@@ -514,7 +542,7 @@ var tests = []struct {
 			"666666\t666666\t666666\t4444\n" +
 			"1\t1\t<font color=red attr=日本語>999999999</font>\t0000000000\n",
 
-		"4444\t\t333\t22\t1\t333\n" +
+		expected: "4444\t\t333\t22\t1\t333\n" +
 			"999999999\t22\n" +
 			"7\t\t22\n" +
 			"\t\t\t\t88888888\n" +
@@ -524,16 +552,16 @@ var tests = []struct {
 	},
 
 	{
-		"14",
-		1, 0, 2, ' ', AlignRight,
-		".0\t.3\t2.4\t-5.1\t\n" +
+		testname: "14",
+		minwidth: 1, tabwidth: 0, padding: 2, padchar: ' ', flags: tabwriter.AlignRight,
+		src: ".0\t.3\t2.4\t-5.1\t\n" +
 			"23.0\t12345678.9\t2.4\t-989.4\t\n" +
 			"5.1\t12.0\t2.4\t-7.0\t\n" +
 			".0\t0.0\t332.0\t8908.0\t\n" +
 			".0\t-.3\t456.4\t22.1\t\n" +
 			".0\t1.2\t44.4\t-13.3\t\t",
 
-		"    .0          .3    2.4    -5.1\n" +
+		expected: "    .0          .3    2.4    -5.1\n" +
 			"  23.0  12345678.9    2.4  -989.4\n" +
 			"   5.1        12.0    2.4    -7.0\n" +
 			"    .0         0.0  332.0  8908.0\n" +
@@ -542,16 +570,16 @@ var tests = []struct {
 	},
 
 	{
-		"14 debug",
-		1, 0, 2, ' ', AlignRight | Debug,
-		".0\t.3\t2.4\t-5.1\t\n" +
+		testname: "14 debug",
+		minwidth: 1, tabwidth: 0, padding: 2, padchar: ' ', flags: tabwriter.AlignRight | tabwriter.Debug,
+		src: ".0\t.3\t2.4\t-5.1\t\n" +
 			"23.0\t12345678.9\t2.4\t-989.4\t\n" +
 			"5.1\t12.0\t2.4\t-7.0\t\n" +
 			".0\t0.0\t332.0\t8908.0\t\n" +
 			".0\t-.3\t456.4\t22.1\t\n" +
 			".0\t1.2\t44.4\t-13.3\t\t",
 
-		"    .0|          .3|    2.4|    -5.1|\n" +
+		expected: "    .0|          .3|    2.4|    -5.1|\n" +
 			"  23.0|  12345678.9|    2.4|  -989.4|\n" +
 			"   5.1|        12.0|    2.4|    -7.0|\n" +
 			"    .0|         0.0|  332.0|  8908.0|\n" +
@@ -560,50 +588,50 @@ var tests = []struct {
 	},
 
 	{
-		"15a",
-		4, 0, 0, '.', 0,
-		"a\t\tb",
-		"a.......b",
+		testname: "15a",
+		minwidth: 4, tabwidth: 0, padding: 0, padchar: '.', flags: 0,
+		src:      "a\t\tb",
+		expected: "a.......b",
 	},
 
 	{
-		"15a colors",
-		4, 0, 0, '.', 0,
-		"\033[93;41ma\033[0m\t\tb",
-		"\033[93;41ma\033[0m.......b",
+		testname: "15a colours",
+		minwidth: 4, tabwidth: 0, padding: 0, padchar: '.', flags: 0,
+		src:      "\x1b[93;41ma\x1b[0m\t\tb",
+		expected: "\x1b[93;41ma\x1b[0m.......b",
 	},
 
 	{
-		"15b",
-		4, 0, 0, '.', DiscardEmptyColumns,
-		"a\t\tb", // htabs - do not discard column
-		"a.......b",
+		testname: "15b",
+		minwidth: 4, tabwidth: 0, padding: 0, padchar: '.', flags: tabwriter.DiscardEmptyColumns,
+		src:      "a\t\tb", // htabs - do not discard column
+		expected: "a.......b",
 	},
 
 	{
-		"15c",
-		4, 0, 0, '.', DiscardEmptyColumns,
-		"a\v\vb",
-		"a...b",
+		testname: "15c",
+		minwidth: 4, tabwidth: 0, padding: 0, padchar: '.', flags: tabwriter.DiscardEmptyColumns,
+		src:      "a\v\vb",
+		expected: "a...b",
 	},
 
 	{
-		"15d",
-		4, 0, 0, '.', AlignRight | DiscardEmptyColumns,
-		"a\v\vb",
-		"...ab",
+		testname: "15d",
+		minwidth: 4, tabwidth: 0, padding: 0, padchar: '.', flags: tabwriter.AlignRight | tabwriter.DiscardEmptyColumns,
+		src:      "a\v\vb",
+		expected: "...ab",
 	},
 
 	{
-		"16a",
-		100, 100, 0, '\t', 0,
-		"a\tb\t\td\n" +
+		testname: "16a",
+		minwidth: 100, tabwidth: 100, padding: 0, padchar: '\t', flags: 0,
+		src: "a\tb\t\td\n" +
 			"a\tb\t\td\te\n" +
 			"a\n" +
 			"a\tb\tc\td\n" +
 			"a\tb\tc\td\te\n",
 
-		"a\tb\t\td\n" +
+		expected: "a\tb\t\td\n" +
 			"a\tb\t\td\te\n" +
 			"a\n" +
 			"a\tb\tc\td\n" +
@@ -611,15 +639,15 @@ var tests = []struct {
 	},
 
 	{
-		"16b",
-		100, 100, 0, '\t', DiscardEmptyColumns,
-		"a\vb\v\vd\n" +
+		testname: "16b",
+		minwidth: 100, tabwidth: 100, padding: 0, padchar: '\t', flags: tabwriter.DiscardEmptyColumns,
+		src: "a\vb\v\vd\n" +
 			"a\vb\v\vd\ve\n" +
 			"a\n" +
 			"a\vb\vc\vd\n" +
 			"a\vb\vc\vd\ve\n",
 
-		"a\tb\td\n" +
+		expected: "a\tb\td\n" +
 			"a\tb\td\te\n" +
 			"a\n" +
 			"a\tb\tc\td\n" +
@@ -627,15 +655,15 @@ var tests = []struct {
 	},
 
 	{
-		"16b debug",
-		100, 100, 0, '\t', DiscardEmptyColumns | Debug,
-		"a\vb\v\vd\n" +
+		testname: "16b debug",
+		minwidth: 100, tabwidth: 100, padding: 0, padchar: '\t', flags: tabwriter.DiscardEmptyColumns | tabwriter.Debug,
+		src: "a\vb\v\vd\n" +
 			"a\vb\v\vd\ve\n" +
 			"a\n" +
 			"a\vb\vc\vd\n" +
 			"a\vb\vc\vd\ve\n",
 
-		"a\t|b\t||d\n" +
+		expected: "a\t|b\t||d\n" +
 			"a\t|b\t||d\t|e\n" +
 			"a\n" +
 			"a\t|b\t|c\t|d\n" +
@@ -643,15 +671,15 @@ var tests = []struct {
 	},
 
 	{
-		"16c",
-		100, 100, 0, '\t', DiscardEmptyColumns,
-		"a\tb\t\td\n" + // hard tabs - do not discard column
+		testname: "16c",
+		minwidth: 100, tabwidth: 100, padding: 0, padchar: '\t', flags: tabwriter.DiscardEmptyColumns,
+		src: "a\tb\t\td\n" + // hard tabs - do not discard column
 			"a\tb\t\td\te\n" +
 			"a\n" +
 			"a\tb\tc\td\n" +
 			"a\tb\tc\td\te\n",
 
-		"a\tb\t\td\n" +
+		expected: "a\tb\t\td\n" +
 			"a\tb\t\td\te\n" +
 			"a\n" +
 			"a\tb\tc\td\n" +
@@ -659,15 +687,15 @@ var tests = []struct {
 	},
 
 	{
-		"16c debug",
-		100, 100, 0, '\t', DiscardEmptyColumns | Debug,
-		"a\tb\t\td\n" + // hard tabs - do not discard column
+		testname: "16c debug",
+		minwidth: 100, tabwidth: 100, padding: 0, padchar: '\t', flags: tabwriter.DiscardEmptyColumns | tabwriter.Debug,
+		src: "a\tb\t\td\n" + // hard tabs - do not discard column
 			"a\tb\t\td\te\n" +
 			"a\n" +
 			"a\tb\tc\td\n" +
 			"a\tb\tc\td\te\n",
 
-		"a\t|b\t|\t|d\n" +
+		expected: "a\t|b\t|\t|d\n" +
 			"a\t|b\t|\t|d\t|e\n" +
 			"a\n" +
 			"a\t|b\t|c\t|d\n" +
@@ -677,7 +705,17 @@ var tests = []struct {
 
 func Test(t *testing.T) {
 	for _, e := range tests {
-		check(t, e.testname, e.minwidth, e.tabwidth, e.padding, e.padchar, e.flags, e.src, e.expected)
+		check(
+			t,
+			e.testname,
+			e.minwidth,
+			e.tabwidth,
+			e.padding,
+			e.padchar,
+			e.flags,
+			e.src,
+			e.expected,
+		)
 	}
 }
 
@@ -688,7 +726,8 @@ func (panicWriter) Write([]byte) (int, error) {
 }
 
 func wantPanicString(t *testing.T, want string) {
-	if e := recover(); e != nil {
+	t.Helper()
+	if e := recover(); e != nil { //nolint: revive // This is deferred
 		got, ok := e.(string)
 		switch {
 		case !ok:
@@ -702,9 +741,9 @@ func wantPanicString(t *testing.T, want string) {
 func TestPanicDuringFlush(t *testing.T) {
 	defer wantPanicString(t, "tabwriter: panic during Flush (cannot write)")
 	var p panicWriter
-	w := new(Writer)
+	w := new(tabwriter.Writer)
 	w.Init(p, 0, 0, 5, ' ', 0)
-	io.WriteString(w, "a")
+	io.WriteString(w, "a") //nolint: errcheck
 	w.Flush()
 	t.Errorf("failed to panic during Flush")
 }
@@ -712,10 +751,59 @@ func TestPanicDuringFlush(t *testing.T) {
 func TestPanicDuringWrite(t *testing.T) {
 	defer wantPanicString(t, "tabwriter: panic during Write (cannot write)")
 	var p panicWriter
-	w := new(Writer)
+	w := new(tabwriter.Writer)
 	w.Init(p, 0, 0, 5, ' ', 0)
-	io.WriteString(w, "a\n\n") // the second \n triggers a call to w.Write and thus a panic
+	// the second \n triggers a call to w.Write and thus a panic
+	io.WriteString(w, "a\n\n") //nolint: errcheck
 	t.Errorf("failed to panic during Write")
+}
+
+func TestVisual(t *testing.T) {
+	writer := tabwriter.NewWriter(os.Stdout, 1, 8, 2, ' ', 0)
+	defer writer.Flush()
+	green := hue.Green
+	cyan := hue.Cyan
+	boldRed := hue.Red | hue.Bold
+	strikeThroughYellow := hue.Yellow | hue.Strikethrough
+	magenta := hue.Magenta
+	blueUnderline := hue.Blue | hue.Underline
+	brightGreen := hue.BrightGreen
+	italicMagenta := hue.Magenta | hue.Italic
+	grey := hue.BrightBlack
+	brightBlue := hue.BrightBlue
+
+	fmt.Fprintf(
+		writer,
+		"%s\t%s\t%s\t%s\t\n",
+		green.Sprint("Green"),
+		cyan.Sprint("Cyan"),
+		boldRed.Sprint("BoldRed"),
+		strikeThroughYellow.Sprint("Strikethrough Yellow"),
+	)
+	fmt.Fprintf(
+		writer,
+		"%s\t%s\t%s\t%s\t\n",
+		cyan.Sprint("Look"),
+		strikeThroughYellow.Sprint("Colours"),
+		green.Sprint("In"),
+		boldRed.Sprint("Tables!"),
+	)
+	fmt.Fprintf(
+		writer,
+		"%s\t%s\t%s\t%s\t\n",
+		magenta.Sprint("All"),
+		blueUnderline.Sprint("Properly"),
+		green.Sprint("Lined"),
+		strikeThroughYellow.Sprint("Up"),
+	)
+	fmt.Fprintf(
+		writer,
+		"%s\t%s\t%s\t%s\t\n",
+		brightGreen.Sprint("How"),
+		italicMagenta.Sprint("Cool"),
+		grey.Sprint("Is"),
+		brightBlue.Sprint("That!"),
+	)
 }
 
 func BenchmarkTable(b *testing.B) {
@@ -728,10 +816,17 @@ func BenchmarkTable(b *testing.B) {
 				b.Run("new", func(b *testing.B) {
 					b.ReportAllocs()
 					for i := 0; i < b.N; i++ {
-						w := NewWriter(ioutil.Discard, 4, 4, 1, ' ', 0) // no particular reason for these settings
+						w := tabwriter.NewWriter(
+							io.Discard,
+							4,
+							4,
+							1,
+							' ',
+							0,
+						) // no particular reason for these settings
 						// Write the line h times.
 						for j := 0; j < h; j++ {
-							w.Write(line)
+							w.Write(line) //nolint: errcheck
 						}
 						w.Flush()
 					}
@@ -739,11 +834,18 @@ func BenchmarkTable(b *testing.B) {
 
 				b.Run("reuse", func(b *testing.B) {
 					b.ReportAllocs()
-					w := NewWriter(ioutil.Discard, 4, 4, 1, ' ', 0) // no particular reason for these settings
+					w := tabwriter.NewWriter(
+						io.Discard,
+						4,
+						4,
+						1,
+						' ',
+						0,
+					) // no particular reason for these settings
 					for i := 0; i < b.N; i++ {
 						// Write the line h times.
 						for j := 0; j < h; j++ {
-							w.Write(line)
+							w.Write(line) //nolint: errcheck
 						}
 						w.Flush()
 					}
@@ -760,11 +862,18 @@ func BenchmarkPyramid(b *testing.B) {
 		b.Run(fmt.Sprintf("%d", x), func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
-				w := NewWriter(ioutil.Discard, 4, 4, 1, ' ', 0) // no particular reason for these settings
+				w := tabwriter.NewWriter(
+					io.Discard,
+					4,
+					4,
+					1,
+					' ',
+					0,
+				) // no particular reason for these settings
 				// Write increasing prefixes of that line.
 				for j := 0; j < x; j++ {
-					w.Write(line[:j*2])
-					w.Write([]byte{'\n'})
+					w.Write(line[:j*2])   //nolint: errcheck
+					w.Write([]byte{'\n'}) //nolint: errcheck
 				}
 				w.Flush()
 			}
@@ -782,11 +891,18 @@ func BenchmarkRagged(b *testing.B) {
 		b.Run(fmt.Sprintf("%d", h), func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
-				w := NewWriter(ioutil.Discard, 4, 4, 1, ' ', 0) // no particular reason for these settings
+				w := tabwriter.NewWriter(
+					io.Discard,
+					4,
+					4,
+					1,
+					' ',
+					0,
+				) // no particular reason for these settings
 				// Write the lines in turn h times.
 				for j := 0; j < h; j++ {
-					w.Write(lines[j%len(lines)])
-					w.Write([]byte{'\n'})
+					w.Write(lines[j%len(lines)]) //nolint: errcheck
+					w.Write([]byte{'\n'})        //nolint: errcheck
 				}
 				w.Flush()
 			}
@@ -810,10 +926,17 @@ lines
 func BenchmarkCode(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		w := NewWriter(ioutil.Discard, 4, 4, 1, ' ', 0) // no particular reason for these settings
+		w := tabwriter.NewWriter(
+			io.Discard,
+			4,
+			4,
+			1,
+			' ',
+			0,
+		) // no particular reason for these settings
 		// The code is small, so it's reasonable for the tabwriter user
 		// to write it all at once, or buffer the writes.
-		w.Write([]byte(codeSnippet))
+		w.Write([]byte(codeSnippet)) //nolint: errcheck
 		w.Flush()
 	}
 }

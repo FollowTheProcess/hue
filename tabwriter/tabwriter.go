@@ -119,10 +119,7 @@ type cell struct {
 // of one line may depend on the cells in future lines. Clients must
 // call Flush when done calling [Writer.Write].
 type Writer struct {
-	// configuration
-	output io.Writer
-
-	// current state
+	output   io.Writer
 	buf      []byte   // collected text excluding tabs or line breaks
 	lines    [][]cell // list of lines; each line is a list of cells
 	widths   []int    // list of column widths in runes - re-used during formatting
@@ -131,7 +128,6 @@ type Writer struct {
 	tabwidth int
 	padding  int
 	flags    uint
-
 	pos      int // buffer position up to which cell.width of incomplete cell has been computed
 	padbytes [8]byte
 	endChar  byte // terminating char of escaped sequence (Escape for escapes, '>', ';' for HTML tags/entities, or 0)
@@ -212,7 +208,7 @@ func (b *Writer) reset() {
 //			(for correct-looking results, tabwidth must correspond
 //			to the tab width in the viewer displaying the result)
 //	flags		formatting control
-func (b *Writer) Init(
+func (b *Writer) Init( //nolint: revive // This is as per text/tabwriter
 	output io.Writer,
 	minwidth, tabwidth, padding int,
 	padchar byte,
@@ -597,12 +593,12 @@ func (b *Writer) Write(buf []byte) (n int, err error) {
 	// append leftover text
 	b.append(buf[n:])
 	n = len(buf)
-	return
+	return n, err
 }
 
 // NewWriter allocates and initializes a new [Writer].
 // The parameters are the same as for the Init function.
-func NewWriter(
+func NewWriter( //nolint: revive // This is as per text/tabwriter
 	output io.Writer,
 	minwidth, tabwidth, padding int,
 	padchar byte,

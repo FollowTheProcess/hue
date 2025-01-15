@@ -49,6 +49,16 @@ ok      github.com/FollowTheProcess/hue 3.044s
 - Nearly 70% less bytes copied
 - 9 fewer heap allocations!
 
+### Tabwriter
+
+A common issue with ANSI colour libraries in Go are that they don't play well with [text/tabwriter]. This is because tabwriter includes the ANSI escape sequence in the cell width calculations, throwing off where it aligns the columns.
+
+This has always annoyed me so when making my own ANSI colour library I had to tackle the tabwriter issue!
+
+Enter `hue/tabwriter` a drop in replacement for [text/tabwriter] that doesn't care about ANSI colours ✨
+
+![tabwriter](https://github.com/FollowTheProcess/hue/raw/main/docs/img/tabwriter.gif)
+
 ## Installation
 
 ```shell
