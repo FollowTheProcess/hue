@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/FollowTheProcess/hue"
-	"github.com/fatih/color"
 )
 
 func TestFprint(t *testing.T) {
@@ -738,23 +737,6 @@ func BenchmarkStyle(b *testing.B) {
 			if err != nil {
 				b.Fatalf("Code returned an unexpected error: %v", err)
 			}
-		}
-	})
-}
-
-func BenchmarkColour(b *testing.B) {
-	hue.Enabled(true)
-	color.NoColor = false
-	b.Run("hue", func(b *testing.B) {
-		for range b.N {
-			style := hue.Cyan | hue.Bold
-			style.Sprintf("Some stuff here: %v\n", true)
-		}
-	})
-	b.Run("color", func(b *testing.B) {
-		for range b.N {
-			style := color.New(color.FgCyan, color.Bold)
-			style.Sprintf("Some stuff here: %v\n", true)
 		}
 	})
 }
