@@ -31,7 +31,7 @@ Like most libraries that do this sort of thing, hue uses [ANSI Escape Codes] to 
 
 `hue` has been designed such that each new style is not a new allocated struct, plus the use of bitmasks to encode style leads to some nice performance benefits!
 
-This benchmark (run as part of hue's CI) measures returning a bold cyan string, one from [fatih/color] and one from `hue`:
+This benchmark measures returning a bold cyan string, one from [fatih/color] and one from `hue`:
 
 ```plaintext
 ❯ go test ./... -run None -benchmem -bench BenchmarkColour
