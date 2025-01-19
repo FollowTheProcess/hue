@@ -35,7 +35,7 @@ const numStyles = 6
 // It defaults to automatic detection, but can be explicitly set by the user via [Enabled].
 var enabled atomic.Bool
 
-func init() {
+func init() { //nolint: gochecknoinits // init is a smell but it's really the only option here
 	// Auto-determine whether or not colour should be enabled on package startup. FWIW I think
 	// init is kind of a smell but it is quite useful for this
 	enabled.Store(autoDetectEnabled())
@@ -131,7 +131,7 @@ const (
 // but it is occasionally useful for debugging.
 //
 // Code returns an error if the style is invalid.
-func (s Style) Code() (string, error) { //nolint: gocyclo // switch case is significantly faster than a map and avoids an allocation
+func (s Style) Code() (string, error) { //nolint: cyclop // switch case is significantly faster than a map and avoids an allocation
 	if s >= maxStyle || s == 0 {
 		return "", fmt.Errorf("invalid style: Style(%d)", s)
 	}
@@ -224,6 +224,7 @@ func (s Style) Code() (string, error) { //nolint: gocyclo // switch case is sign
 
 	// Combinations
 	styles := make([]string, 0, numStyles)
+
 	for style := Bold; style <= BrightWhiteBackground; style <<= 1 {
 		// If the given style has this style bit set, add its code to the string
 		if s&style != 0 {
@@ -231,6 +232,7 @@ func (s Style) Code() (string, error) { //nolint: gocyclo // switch case is sign
 			if err != nil {
 				return "", err
 			}
+
 			styles = append(styles, code)
 		}
 	}
@@ -243,6 +245,7 @@ func (s Style) Code() (string, error) { //nolint: gocyclo // switch case is sign
 // It returns the number of bytes written and any write error encountered.
 func (s Style) Fprint(w io.Writer, a ...any) (n int, err error) {
 	text := s.wrap(fmt.Sprint(a...))
+
 	return fmt.Fprint(w, text)
 }
 
@@ -250,6 +253,7 @@ func (s Style) Fprint(w io.Writer, a ...any) (n int, err error) {
 // the number of bytes written and any write error.
 func (s Style) Fprintf(w io.Writer, format string, a ...any) (n int, err error) {
 	text := s.wrap(fmt.Sprintf(format, a...))
+
 	return fmt.Fprint(w, text)
 }
 
@@ -260,6 +264,7 @@ func (s Style) Fprintln(w io.Writer, a ...any) (n int, err error) {
 	// Important to add the newline at the very end so wrap the raw text
 	// then do Fprintln
 	text := s.wrap(fmt.Sprint(a...))
+
 	return fmt.Fprintln(w, text)
 }
 
@@ -300,6 +305,7 @@ func (s Style) Sprintln(a ...any) string {
 	// Important to add the newline at the very end so wrap the raw text
 	// then do Sprintln
 	text := s.wrap(fmt.Sprint(a...))
+
 	return fmt.Sprintln(text)
 }
 
@@ -313,6 +319,7 @@ func (s Style) wrap(text string) string {
 	if err != nil {
 		return text
 	}
+
 	return escape + code + "m" + text + reset
 }
 
@@ -323,7 +330,6 @@ func autoDetectEnabled() bool {
 	// went down a bit of a rabbit hole. It turns out that under the hood, os.Getenv is guarded by a sync.Once
 	// so only on the first call to Getenv are we actually making a syscall, all future calls just use the
 	// cached copy so no need to do anything clever in user code!
-
 	// $FORCE_COLOR overrides everything
 	if os.Getenv("FORCE_COLOR") != "" {
 		return true

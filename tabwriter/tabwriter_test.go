@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/FollowTheProcess/hue"
@@ -26,13 +27,16 @@ func (b *buffer) clear() { b.a = b.a[0:0] }
 func (b *buffer) Write(buf []byte) (written int, err error) {
 	n := len(b.a)
 	m := len(buf)
+
 	if !(n+m <= cap(b.a)) {
 		panic("buffer.Write: buffer too small")
 	}
+
 	b.a = b.a[0 : n+m]
-	for i := 0; i < m; i++ {
+	for i := range m {
 		b.a[n+i] = buf[i]
 	}
+
 	return len(buf), nil
 }
 
@@ -40,10 +44,12 @@ func (b *buffer) String() string { return string(b.a) }
 
 func write(t *testing.T, testname string, w *tabwriter.Writer, src string) {
 	t.Helper()
+
 	written, err := io.WriteString(w, src)
 	if err != nil {
 		t.Errorf("--- test: %s\n--- src:\n%q\n--- write error: %v\n", testname, src, err)
 	}
+
 	if written != len(src) {
 		t.Errorf(
 			"--- test: %s\n--- src:\n%q\n--- written = %d, len(src) = %d\n",
@@ -63,6 +69,7 @@ func verify( //nolint: revive // argument-limit
 	src, expected string,
 ) {
 	t.Helper()
+
 	err := w.Flush()
 	if err != nil {
 		t.Errorf("--- test: %s\n--- src:\n%q\n--- flush error: %v\n", testname, src, err)
@@ -89,36 +96,47 @@ func check( //nolint: revive // argument-limit
 	src, expected string,
 ) {
 	t.Helper()
+
 	var b buffer
+
 	b.init(1000)
 
 	var w tabwriter.Writer
+
 	w.Init(&b, minwidth, tabwidth, padding, padchar, flags)
 
 	// write all at once
 	title := testname + " (written all at once)"
+
 	b.clear()
 	write(t, title, &w, src)
 	verify(t, title, &w, &b, src, expected)
 
 	// write byte-by-byte
 	title = testname + " (written byte-by-byte)"
+
 	b.clear()
-	for i := 0; i < len(src); i++ {
+
+	for i := range len(src) {
 		write(t, title, &w, src[i:i+1])
 	}
+
 	verify(t, title, &w, &b, src, expected)
 
 	// write using Fibonacci slice sizes
 	title = testname + " (written in fibonacci slices)"
+
 	b.clear()
+
 	for i, d := 0, 0; i < len(src); {
 		write(t, title, &w, src[i:i+d])
+
 		i, d = i+d, d+1
 		if i+d > len(src) {
 			d = len(src) - i
 		}
 	}
+
 	verify(t, title, &w, &b, src, expected)
 }
 
@@ -727,8 +745,10 @@ func (panicWriter) Write([]byte) (int, error) {
 
 func wantPanicString(t *testing.T, want string) {
 	t.Helper()
+
 	if e := recover(); e != nil { //nolint: revive // This is deferred
 		got, ok := e.(string)
+
 		switch {
 		case !ok:
 			t.Errorf("got %v (%T), want panic string", e, e)
@@ -740,7 +760,9 @@ func wantPanicString(t *testing.T, want string) {
 
 func TestPanicDuringFlush(t *testing.T) {
 	defer wantPanicString(t, "tabwriter: panic during Flush (cannot write)")
+
 	var p panicWriter
+
 	w := new(tabwriter.Writer)
 	w.Init(p, 0, 0, 5, ' ', 0)
 	io.WriteString(w, "a") //nolint: errcheck
@@ -750,7 +772,9 @@ func TestPanicDuringFlush(t *testing.T) {
 
 func TestPanicDuringWrite(t *testing.T) {
 	defer wantPanicString(t, "tabwriter: panic during Write (cannot write)")
+
 	var p panicWriter
+
 	w := new(tabwriter.Writer)
 	w.Init(p, 0, 0, 5, ' ', 0)
 	// the second \n triggers a call to w.Write and thus a panic
@@ -761,6 +785,7 @@ func TestPanicDuringWrite(t *testing.T) {
 func TestVisual(t *testing.T) {
 	writer := tabwriter.NewWriter(os.Stdout, 1, 8, 2, ' ', 0)
 	defer writer.Flush()
+
 	green := hue.Green
 	cyan := hue.Cyan
 	boldRed := hue.Red | hue.Bold
@@ -811,11 +836,13 @@ func BenchmarkTable(b *testing.B) {
 		// Build a line with w cells.
 		line := bytes.Repeat([]byte("a\t"), w)
 		line = append(line, '\n')
+
 		for _, h := range [...]int{10, 1000, 100000} {
 			b.Run(fmt.Sprintf("%dx%d", w, h), func(b *testing.B) {
 				b.Run("new", func(b *testing.B) {
 					b.ReportAllocs()
-					for i := 0; i < b.N; i++ {
+
+					for range b.N {
 						w := tabwriter.NewWriter(
 							io.Discard,
 							4,
@@ -825,15 +852,17 @@ func BenchmarkTable(b *testing.B) {
 							0,
 						) // no particular reason for these settings
 						// Write the line h times.
-						for j := 0; j < h; j++ {
+						for range h {
 							w.Write(line) //nolint: errcheck
 						}
+
 						w.Flush()
 					}
 				})
 
 				b.Run("reuse", func(b *testing.B) {
 					b.ReportAllocs()
+
 					w := tabwriter.NewWriter(
 						io.Discard,
 						4,
@@ -842,11 +871,13 @@ func BenchmarkTable(b *testing.B) {
 						' ',
 						0,
 					) // no particular reason for these settings
-					for i := 0; i < b.N; i++ {
+
+					for range b.N {
 						// Write the line h times.
-						for j := 0; j < h; j++ {
+						for range h {
 							w.Write(line) //nolint: errcheck
 						}
+
 						w.Flush()
 					}
 				})
@@ -859,9 +890,10 @@ func BenchmarkPyramid(b *testing.B) {
 	for _, x := range [...]int{10, 100, 1000} {
 		// Build a line with x cells.
 		line := bytes.Repeat([]byte("a\t"), x)
-		b.Run(fmt.Sprintf("%d", x), func(b *testing.B) {
+		b.Run(strconv.Itoa(x), func(b *testing.B) {
 			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
+
+			for range b.N {
 				w := tabwriter.NewWriter(
 					io.Discard,
 					4,
@@ -871,10 +903,11 @@ func BenchmarkPyramid(b *testing.B) {
 					0,
 				) // no particular reason for these settings
 				// Write increasing prefixes of that line.
-				for j := 0; j < x; j++ {
+				for j := range x {
 					w.Write(line[:j*2])   //nolint: errcheck
 					w.Write([]byte{'\n'}) //nolint: errcheck
 				}
+
 				w.Flush()
 			}
 		})
@@ -887,10 +920,12 @@ func BenchmarkRagged(b *testing.B) {
 		// Build a line with w cells.
 		lines[i] = bytes.Repeat([]byte("a\t"), w)
 	}
+
 	for _, h := range [...]int{10, 100, 1000} {
-		b.Run(fmt.Sprintf("%d", h), func(b *testing.B) {
+		b.Run(strconv.Itoa(h), func(b *testing.B) {
 			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
+
+			for range b.N {
 				w := tabwriter.NewWriter(
 					io.Discard,
 					4,
@@ -900,10 +935,11 @@ func BenchmarkRagged(b *testing.B) {
 					0,
 				) // no particular reason for these settings
 				// Write the lines in turn h times.
-				for j := 0; j < h; j++ {
+				for j := range h {
 					w.Write(lines[j%len(lines)]) //nolint: errcheck
 					w.Write([]byte{'\n'})        //nolint: errcheck
 				}
+
 				w.Flush()
 			}
 		})
@@ -925,7 +961,8 @@ lines
 
 func BenchmarkCode(b *testing.B) {
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+
+	for range b.N {
 		w := tabwriter.NewWriter(
 			io.Discard,
 			4,

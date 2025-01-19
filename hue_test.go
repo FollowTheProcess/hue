@@ -52,6 +52,7 @@ func TestFprint(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the behaviour is explicitly as requested
 			hue.Enabled(tt.enabled)
+
 			buf := &bytes.Buffer{}
 			tt.style.Fprint(buf, tt.input)
 
@@ -111,6 +112,7 @@ func TestFprintf(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the behaviour is explicitly as requested
 			hue.Enabled(tt.enabled)
+
 			buf := &bytes.Buffer{}
 			tt.style.Fprintf(buf, tt.input, tt.args...)
 
@@ -165,6 +167,7 @@ func TestFprintln(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the behaviour is explicitly as requested
 			hue.Enabled(tt.enabled)
+
 			buf := &bytes.Buffer{}
 			tt.style.Fprintln(buf, tt.input)
 
@@ -222,6 +225,7 @@ func TestPrint(t *testing.T) {
 
 			stdout := captureOutput(t, func() error {
 				_, err := tt.style.Print(tt.input)
+
 				return err
 			})
 
@@ -281,8 +285,10 @@ func TestPrintf(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the behaviour is explicitly as requested
 			hue.Enabled(tt.enabled)
+
 			stdout := captureOutput(t, func() error {
 				_, err := tt.style.Printf(tt.input, tt.args...)
+
 				return err
 			})
 
@@ -337,8 +343,10 @@ func TestPrintln(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Ensure the behaviour is explicitly as requested
 			hue.Enabled(tt.enabled)
+
 			stdout := captureOutput(t, func() error {
 				_, err := tt.style.Println(tt.input)
+
 				return err
 			})
 
@@ -565,6 +573,7 @@ func TestStyleCode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			hue.Enabled(true)
+
 			got, err := tt.style.Code()
 			if err != nil {
 				t.Fatalf("Code() returned an error: %v", err)
@@ -595,6 +604,7 @@ func TestStyleError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			hue.Enabled(true)
+
 			got, err := tt.style.Code()
 			if err == nil {
 				t.Fatalf("expected an error, would have got %s", got)
@@ -639,6 +649,7 @@ func TestStyleCodeCombinations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			hue.Enabled(true)
+
 			got, err := tt.style.Code()
 			if err != nil {
 				t.Fatalf("Code() returned an error: %v", err)
@@ -651,7 +662,7 @@ func TestStyleCodeCombinations(t *testing.T) {
 	}
 }
 
-func TestVisual(t *testing.T) {
+func TestVisual(_ *testing.T) {
 	// Run with go test -v, simple visual check to see if we're writing
 	// the correct colours
 	tests := []struct {
@@ -778,6 +789,7 @@ func captureOutput(tb testing.TB, fn func() error) (stdout string) {
 	stdoutCapture := make(chan string)
 
 	var wg sync.WaitGroup
+
 	wg.Add(1)
 
 	// Copy in goroutines to avoid blocking
@@ -786,6 +798,7 @@ func captureOutput(tb testing.TB, fn func() error) (stdout string) {
 			close(stdoutCapture)
 			wg.Done()
 		}()
+
 		buf := &bytes.Buffer{}
 		if _, err := io.Copy(buf, stdoutReader); err != nil {
 			tb.Fatalf("CaptureOutput: failed to copy from stdout reader: %v", err)
@@ -798,8 +811,11 @@ func captureOutput(tb testing.TB, fn func() error) (stdout string) {
 		tb.Fatalf("CaptureOutput: user function returned an error: %v", err)
 	}
 
-	// Close the writers
-	stdoutWriter.Close()
+	// Close the writer
+	closeErr := stdoutWriter.Close()
+	if closeErr != nil {
+		tb.Fatalf("CaptureOutput: could not close stdout pipe: %v", closeErr)
+	}
 
 	capturedStdout := <-stdoutCapture
 
