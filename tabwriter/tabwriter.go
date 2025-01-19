@@ -217,17 +217,21 @@ func (b *Writer) Init( //nolint: revive // This is as per text/tabwriter
 	if minwidth < 0 || tabwidth < 0 || padding < 0 {
 		panic("negative minwidth, tabwidth, or padding")
 	}
+
 	b.output = output
 	b.minwidth = minwidth
 	b.tabwidth = tabwidth
 	b.padding = padding
+
 	for i := range b.padbytes {
 		b.padbytes[i] = padchar
 	}
+
 	if padchar == '\t' {
 		// tab padding enforces left-alignment
 		flags &^= AlignRight
 	}
+
 	b.flags = flags
 
 	b.reset()
@@ -246,6 +250,7 @@ func (b *Writer) write0(buf []byte) {
 	if n != len(buf) && err == nil {
 		err = io.ErrShortWrite
 	}
+
 	if err != nil {
 		panic(osError{err})
 	}
@@ -256,6 +261,7 @@ func (b *Writer) writeN(src []byte, n int) {
 		b.write0(src)
 		n -= len(src)
 	}
+
 	b.write0(src[0:n])
 }
 
@@ -272,11 +278,14 @@ func (b *Writer) writePadding(textw, cellw int, useTabs bool) {
 		}
 		// make cellw the smallest multiple of b.tabwidth
 		cellw = (cellw + b.tabwidth - 1) / b.tabwidth * b.tabwidth
+
 		n := cellw - textw // amount of padding
 		if n < 0 {
 			panic("internal error")
 		}
+
 		b.writeN(tabs, (n+b.tabwidth-1)/b.tabwidth)
+
 		return
 	}
 
@@ -286,8 +295,9 @@ func (b *Writer) writePadding(textw, cellw int, useTabs bool) {
 
 var vbar = []byte{'|'}
 
-func (b *Writer) writeLines(pos0 int, line0, line1 int) (pos int) {
+func (b *Writer) writeLines(pos0, line0, line1 int) (pos int) {
 	pos = pos0
+
 	for i := line0; i < line1; i++ {
 		line := b.lines[i]
 
@@ -308,9 +318,11 @@ func (b *Writer) writeLines(pos0 int, line0, line1 int) (pos int) {
 			} else {
 				// non-empty cell
 				useTabs = false
+
 				if b.flags&AlignRight == 0 { // align left
 					b.write0(b.buf[pos : pos+c.size])
 					pos += c.size
+
 					if j < len(b.widths) {
 						b.writePadding(c.width, b.widths[j], false)
 					}
@@ -318,6 +330,7 @@ func (b *Writer) writeLines(pos0 int, line0, line1 int) (pos int) {
 					if j < len(b.widths) {
 						b.writePadding(c.width, b.widths[j], false)
 					}
+
 					b.write0(b.buf[pos : pos+c.size])
 					pos += c.size
 				}
@@ -334,6 +347,7 @@ func (b *Writer) writeLines(pos0 int, line0, line1 int) (pos int) {
 			b.write0(newline)
 		}
 	}
+
 	return pos
 }
 
@@ -341,9 +355,10 @@ func (b *Writer) writeLines(pos0 int, line0, line1 int) (pos int) {
 // is the buffer position corresponding to the beginning of line0.
 // Returns the buffer position corresponding to the beginning of
 // line1 and an error, if any.
-func (b *Writer) format(pos0 int, line0, line1 int) (pos int) {
+func (b *Writer) format(pos0, line0, line1 int) (pos int) {
 	pos = pos0
 	column := len(b.widths)
+
 	for this := line0; this < line1; this++ {
 		line := b.lines[this]
 
@@ -364,6 +379,7 @@ func (b *Writer) format(pos0 int, line0, line1 int) (pos int) {
 		// column block begin
 		width := b.minwidth // minimal column width
 		discardable := true // true if all cells in this column are empty and "soft"
+
 		for ; this < line1; this++ {
 			line = b.lines[this]
 			if column >= len(line)-1 {
@@ -441,6 +457,7 @@ func (b *Writer) endEscape() {
 	switch b.endChar {
 	case Escape:
 		b.updateWidth()
+
 		if b.flags&StripEscape == 0 {
 			b.cell.width -= 2 // don't count the Escape chars
 		}
@@ -450,6 +467,7 @@ func (b *Writer) endEscape() {
 	case ';':
 		b.cell.width++ // entity, count as one rune
 	}
+
 	b.pos = len(b.buf)
 	b.endChar = 0
 }
@@ -461,6 +479,7 @@ func (b *Writer) terminateCell(htab bool) int {
 	line := &b.lines[len(b.lines)-1]
 	*line = append(*line, b.cell)
 	b.cell = cell{}
+
 	return len(*line)
 }
 
@@ -470,10 +489,13 @@ func (b *Writer) handlePanic(err *error, op string) {
 			// If Flush ran into a panic, we still need to reset.
 			b.reset()
 		}
+
 		if nerr, ok := e.(osError); ok {
 			*err = nerr.err
+
 			return
 		}
+
 		panic(fmt.Sprintf("tabwriter: panic during %s (%v)", op, e))
 	}
 }
@@ -491,6 +513,7 @@ func (b *Writer) Flush() error {
 func (b *Writer) flush() (err error) {
 	defer b.handlePanic(&err, "Flush")
 	b.flushNoDefers()
+
 	return nil
 }
 
@@ -504,6 +527,7 @@ func (b *Writer) flushNoDefers() {
 			// inside escape - terminate it even if incomplete
 			b.endEscape()
 		}
+
 		b.terminateCell(false)
 	}
 
@@ -522,6 +546,7 @@ func (b *Writer) Write(buf []byte) (n int, err error) {
 
 	// split text into cells
 	n = 0
+
 	for i, ch := range buf {
 		if b.endChar == 0 {
 			// outside escape
@@ -530,11 +555,14 @@ func (b *Writer) Write(buf []byte) (n int, err error) {
 				// end of cell
 				b.append(buf[n:i])
 				b.updateWidth()
+
 				n = i + 1 // ch consumed
 				ncells := b.terminateCell(ch == '\t')
+
 				if ch == '\n' || ch == '\f' {
 					// terminate line
 					b.addLine(ch == '\f')
+
 					if ch == '\f' || ncells == 1 {
 						// A '\f' always forces a flush. Otherwise, if the previous
 						// line has only one cell which does not have an impact on
@@ -542,6 +570,7 @@ func (b *Writer) Write(buf []byte) (n int, err error) {
 						// line is ignored by format()), thus we can flush the
 						// Writer contents.
 						b.flushNoDefers()
+
 						if ch == '\f' && b.flags&Debug != 0 {
 							// indicate section break
 							b.write0(hbar)
@@ -553,10 +582,12 @@ func (b *Writer) Write(buf []byte) (n int, err error) {
 				// start of escaped sequence
 				b.append(buf[n:i])
 				b.updateWidth()
+
 				n = i
 				if b.flags&StripEscape != 0 {
 					n++ // strip Escape
 				}
+
 				b.startEscape(Escape)
 
 			case '<', '&':
@@ -565,14 +596,18 @@ func (b *Writer) Write(buf []byte) (n int, err error) {
 					// begin of tag/entity
 					b.append(buf[n:i])
 					b.updateWidth()
+
 					n = i
+
 					b.startEscape(ch)
 				}
 			case '[':
 				if b.prev == escape {
 					b.append(buf[n:i])
 					b.updateWidth()
+
 					n = i
+
 					b.startEscape(ch)
 				}
 			}
@@ -583,16 +618,20 @@ func (b *Writer) Write(buf []byte) (n int, err error) {
 			if ch == Escape && b.flags&StripEscape != 0 {
 				j = i // strip Escape
 			}
+
 			b.append(buf[n:j])
 			n = i + 1 // ch consumed
+
 			b.endEscape()
 		}
+
 		b.prev = ch
 	}
 
 	// append leftover text
 	b.append(buf[n:])
 	n = len(buf)
+
 	return n, err
 }
 
