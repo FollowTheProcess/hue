@@ -58,12 +58,12 @@
 # Run from the repo root
 Output ./docs/img/demo.gif
 
-Set FontSize 18
+Set FontSize 16
 Set FontFamily "GeistMono Nerd Font Mono"
 Set Theme "Catppuccin Macchiato"
 Set WindowBar Colorful
-Set Padding 5
-Set Height 800
+Set Padding 10
+Set Height 1200
 Set Width 1200
 Set Margin 40
 Set MarginFill "#7983FF"
