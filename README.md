@@ -24,7 +24,7 @@ The dominant package in this space for Go is [fatih/color] which I've used befor
 
 Like most libraries that do this sort of thing, hue uses [ANSI Escape Codes] to instruct the terminal emulator to render particular colours. See [here](https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797) for a helpful breakdown of how these codes work.
 
-> [!NOTE]
+> [!IMPORTANT]
 > Windows support is best effort, I don't own or use any windows devices so it's not a super high priority for me. If Windows support is important to you, you should use [fatih/color]
 
 ### Performance
@@ -49,6 +49,10 @@ ok      github.com/FollowTheProcess/hue 3.044s
 - Nearly 70% less bytes copied
 - 9 fewer heap allocations!
 
+> [!NOTE]
+> This benchmark used to be in here and run as part of CI, but I found that `fatih/color` would show up as an indirect dependency
+> in code that imported `hue` so I got rid of it, you'll just have to trust me I guess 😂
+
 ### Tabwriter
 
 A common issue with ANSI colour libraries in Go are that they don't play well with [text/tabwriter]. This is because tabwriter includes the ANSI escape sequence in the cell width calculations, throwing off where it aligns the columns.
@@ -58,6 +62,10 @@ This has always annoyed me so when making my own ANSI colour library I had to ta
 Enter `hue/tabwriter` a drop in replacement for [text/tabwriter] that doesn't care about ANSI colours ✨
 
 ![tabwriter](https://github.com/FollowTheProcess/hue/raw/main/docs/img/tabwriter.gif)
+
+> [!NOTE]
+> The actual change is incredibly simple, just teaching [text/tabwriter] to ignore ANSI codes when it sees them so compatibility
+> should be seamless
 
 ## Installation
 
