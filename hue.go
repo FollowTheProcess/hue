@@ -222,6 +222,10 @@ func (s Style) Code() (string, error) { //nolint: cyclop // switch case is signi
 		return "107", nil
 	}
 
+	// TODO(@FollowTheProcess): Optimisation: use a stack allocated array of size numStyles
+	// this should cover most strings, then have an overflow slice which handles pathological
+	// combos by dynamic allocation
+
 	// Combinations
 	styles := make([]string, 0, numStyles)
 
