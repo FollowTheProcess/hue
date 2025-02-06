@@ -27,6 +27,35 @@ Like most libraries that do this sort of thing, hue uses [ANSI Escape Codes] to 
 > [!IMPORTANT]
 > Windows support is best effort, I don't own or use any windows devices so it's not a super high priority for me. If Windows support is important to you, you should use [fatih/color]
 
+## Installation
+
+```shell
+go get github.com/FollowTheProcess/hue@latest
+```
+
+## Quickstart
+
+Colours and styles in `hue` are implemented as a bitmask and are therefore compile time constants! This means you can do this...
+
+```go
+package main
+
+import "github.com/FollowTheProcess/hue"
+
+const (
+    success = hue.Green | hue.Bold
+    failure = hue.Red | hue.Underline
+)
+
+func main() {
+    success.Println("It worked!")
+    failure.Println("Not really")
+}
+```
+
+> [!TIP]
+> Most functions from the `fmt` package are implemented for hue styles including `Sprintf`, `Fprintln` etc.
+
 ### Performance
 
 `hue` has been designed such that each new style is not a new allocated struct, plus the use of bitmasks to encode style leads to some nice performance benefits!
@@ -66,35 +95,6 @@ Enter `hue/tabwriter` a drop in replacement for [text/tabwriter] that doesn't ca
 > [!NOTE]
 > The actual change is incredibly simple, just teaching [text/tabwriter] to ignore ANSI codes when it sees them so compatibility
 > should be seamless
-
-## Installation
-
-```shell
-go get github.com/FollowTheProcess/hue@latest
-```
-
-## Quickstart
-
-Colours and styles in `hue` are implemented as a bitmask and are therefore compile time constants! This means you can do this...
-
-```go
-package main
-
-import "github.com/FollowTheProcess/hue"
-
-const (
-    success = hue.Green | hue.Bold
-    failure = hue.Red | hue.Underline
-)
-
-func main() {
-    success.Println("It worked!")
-    failure.Println("Not really")
-}
-```
-
-> [!TIP]
-> Most functions from the `fmt` package are implemented for hue styles including `Sprintf`, `Fprintln` etc.
 
 ### Credits
 
