@@ -35,7 +35,7 @@ const numStyles = 6
 // It defaults to automatic detection, but can be explicitly set by the user via [Enabled].
 var enabled atomic.Bool
 
-func init() { //nolint: gochecknoinits // init is a smell but it's really the only option here
+func init() { //nolint: gochecknoinits // really the only option here
 	// Auto-determine whether or not colour should be enabled on package startup. FWIW I think
 	// init is kind of a smell but it is quite useful for this
 	enabled.Store(autoDetectEnabled())
@@ -221,10 +221,6 @@ func (s Style) Code() (string, error) { //nolint: cyclop // switch case is signi
 	case BrightWhiteBackground:
 		return "107", nil
 	}
-
-	// TODO(@FollowTheProcess): Optimisation: use a stack allocated array of size numStyles
-	// this should cover most strings, then have an overflow slice which handles pathological
-	// combos by dynamic allocation
 
 	// Combinations
 	styles := make([]string, 0, numStyles)
