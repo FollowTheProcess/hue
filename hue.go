@@ -357,8 +357,8 @@ func autoDetectEnabled() bool {
 
 type codes struct {
 	front  [numStyles]string
-	nFront int
 	back   []string
+	nFront int
 }
 
 func (c *codes) add(str string) {
@@ -375,23 +375,17 @@ func (c *codes) add(str string) {
 }
 
 func (c *codes) String() string {
+	var n int
 	var b strings.Builder
+
 	// Fast path: only the stack buffer is used
-	if len(c.back) == 0 {
-		if c.front[0] != "" {
-			b.WriteString(c.front[0])
+	for _, code := range c.front {
+		if code != "" {
+			n += len(code) + 1 // 1 = len(";")
 		}
-		for _, code := range c.front[1:] {
-			if code != "" {
-				b.WriteByte(';')
-				b.WriteString(code)
-			}
-		}
-
-		return b.String()
 	}
+	b.Grow(n)
 
-	// Slower, the codes spilled over to the back slice too
 	if c.front[0] != "" {
 		b.WriteString(c.front[0])
 	}
@@ -402,9 +396,13 @@ func (c *codes) String() string {
 		}
 	}
 
-	for _, code := range c.back {
-		b.WriteByte(';')
-		b.WriteString(code)
+	// Slow path, more than 6 styles in combo (which is sort of nonsensical)
+	// so fall back to the slow, growable slice
+	if len(c.back) != 0 {
+		for _, code := range c.back {
+			b.WriteByte(';')
+			b.WriteString(code)
+		}
 	}
 
 	return b.String()
