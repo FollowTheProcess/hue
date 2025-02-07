@@ -223,7 +223,7 @@ func (s Style) Code() (string, error) { //nolint: cyclop // switch case is signi
 	}
 
 	// Combinations
-	styles := make([]string, 0, numStyles)
+	var c codes
 
 	for style := Bold; style <= BrightWhiteBackground; style <<= 1 {
 		// If the given style has this style bit set, add its code to the string
@@ -233,11 +233,11 @@ func (s Style) Code() (string, error) { //nolint: cyclop // switch case is signi
 				return "", err
 			}
 
-			styles = append(styles, code)
+			c.add(code)
 		}
 	}
 
-	return strings.Join(styles, ";"), nil
+	return c.String(), nil
 }
 
 // Fprint formats using the default formats for its operands and writes to w.
@@ -353,4 +353,57 @@ func autoDetectEnabled() bool {
 
 	// Can't detect otherwise so be safe and disable colour
 	return false
+}
+
+type codes struct {
+	front  [numStyles]string
+	back   []string
+	nFront int
+}
+
+func (c *codes) add(str string) {
+	if c.nFront < len(c.front) {
+		// There's room in the stack buffer
+		c.front[c.nFront] = str
+		c.nFront++
+		return
+	}
+
+	// Slower, we've filled up the stack buffer so must now append
+	// to the back slice
+	c.back = append(c.back, str)
+}
+
+func (c *codes) String() string {
+	var n int
+	var b strings.Builder
+
+	// Fast path: only the stack buffer is used
+	for _, code := range c.front {
+		if code != "" {
+			n += len(code) + 1 // 1 = len(";")
+		}
+	}
+	b.Grow(n)
+
+	if c.front[0] != "" {
+		b.WriteString(c.front[0])
+	}
+	for _, code := range c.front[1:] {
+		if code != "" {
+			b.WriteByte(';')
+			b.WriteString(code)
+		}
+	}
+
+	// Slow path, more than 6 styles in combo (which is sort of nonsensical)
+	// so fall back to the slow, growable slice
+	if len(c.back) != 0 {
+		for _, code := range c.back {
+			b.WriteByte(';')
+			b.WriteString(code)
+		}
+	}
+
+	return b.String()
 }
