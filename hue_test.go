@@ -644,6 +644,11 @@ func TestStyleCodeCombinations(t *testing.T) {
 			style: hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold,
 			want:  "1;3;9;31;34;40",
 		},
+		{
+			name:  "too many styles",
+			style: hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold | hue.Underline | hue.GreenBackground | hue.Reverse,
+			want:  "1;3;4;7;9;31;34;40;42",
+		},
 	}
 
 	for _, tt := range tests {

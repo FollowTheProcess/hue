@@ -21,19 +21,18 @@ linters:
     - lll # Auto formatters do this and what they can't do I don't care about
     - maintidx # This is just the inverse of complexity... which is cyclop
     - nestif # cyclop does this
+    - nlreturn # Similar to wsl, I think best left to judgement
     - nonamedreturns # Named returns are often helpful, it's naked returns that are the issue
-    - paralleltest # I've never had Go tests take longer than a few seconds, it's fine
+    - thelper # Lots of false positives due to the way I do table tests in here
     - varnamelen # Lots of false positives of things that are fine
     - wrapcheck # Not every error must be wrapped
+    - wsl # Very aggressive, some of this I like but tend to do anyway
 
 issues:
   exclude-rules:
     - path: _test\.go
       linters:
         - prealloc # These kinds of optimisations will make no difference to test code
-
-  exclude-dirs:
-    - tabwriter # This is 99% a fork of text/tabwriter
 
 linters-settings:
   cyclop:
