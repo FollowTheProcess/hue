@@ -842,7 +842,7 @@ func BenchmarkTable(b *testing.B) {
 				b.Run("new", func(b *testing.B) {
 					b.ReportAllocs()
 
-					for range b.N {
+					for b.Loop() {
 						w := tabwriter.NewWriter(
 							io.Discard,
 							4,
@@ -893,7 +893,7 @@ func BenchmarkPyramid(b *testing.B) {
 		b.Run(strconv.Itoa(x), func(b *testing.B) {
 			b.ReportAllocs()
 
-			for range b.N {
+			for b.Loop() {
 				w := tabwriter.NewWriter(
 					io.Discard,
 					4,
@@ -925,7 +925,7 @@ func BenchmarkRagged(b *testing.B) {
 		b.Run(strconv.Itoa(h), func(b *testing.B) {
 			b.ReportAllocs()
 
-			for range b.N {
+			for b.Loop() {
 				w := tabwriter.NewWriter(
 					io.Discard,
 					4,
@@ -962,7 +962,7 @@ lines
 func BenchmarkCode(b *testing.B) {
 	b.ReportAllocs()
 
-	for range b.N {
+	for b.Loop() {
 		w := tabwriter.NewWriter(
 			io.Discard,
 			4,
