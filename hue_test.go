@@ -738,7 +738,7 @@ func BenchmarkStyle(b *testing.B) {
 	hue.Enabled(true)
 	b.Run("simple", func(b *testing.B) {
 		style := hue.Cyan
-		for range b.N {
+		for b.Loop() {
 			_, err := style.Code()
 			if err != nil {
 				b.Fatalf("Code returned an unexpected error: %v", err)
@@ -748,7 +748,7 @@ func BenchmarkStyle(b *testing.B) {
 
 	b.Run("composite fast", func(b *testing.B) {
 		style := hue.Cyan | hue.WhiteBackground | hue.Bold | hue.Strikethrough
-		for range b.N {
+		for b.Loop() {
 			_, err := style.Code()
 			if err != nil {
 				b.Fatalf("Code returned an unexpected error: %v", err)
@@ -758,7 +758,7 @@ func BenchmarkStyle(b *testing.B) {
 
 	b.Run("composite slow", func(b *testing.B) {
 		style := hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold | hue.Underline | hue.GreenBackground | hue.Reverse
-		for range b.N {
+		for b.Loop() {
 			_, err := style.Code()
 			if err != nil {
 				b.Fatalf("Code returned an unexpected error: %v", err)
