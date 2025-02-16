@@ -667,7 +667,7 @@ func TestStyleCodeCombinations(t *testing.T) {
 	}
 }
 
-func TestVisual(_ *testing.T) {
+func TestVisual(t *testing.T) {
 	// Run with go test -v, simple visual check to see if we're writing
 	// the correct colours
 	tests := []struct {
@@ -763,6 +763,56 @@ func BenchmarkStyle(b *testing.B) {
 			if err != nil {
 				b.Fatalf("Code returned an unexpected error: %v", err)
 			}
+		}
+	})
+}
+
+func BenchmarkSprint(b *testing.B) {
+	const text = "some text"
+	hue.Enabled(true)
+	b.Run("simple", func(b *testing.B) {
+		style := hue.Cyan
+		for b.Loop() {
+			style.Sprint(text)
+		}
+	})
+
+	b.Run("composite fast", func(b *testing.B) {
+		style := hue.Cyan | hue.WhiteBackground | hue.Bold | hue.Strikethrough
+		for b.Loop() {
+			style.Sprint(text)
+		}
+	})
+
+	b.Run("composite slow", func(b *testing.B) {
+		style := hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold | hue.Underline | hue.GreenBackground | hue.Reverse
+		for b.Loop() {
+			style.Sprint(text)
+		}
+	})
+}
+
+func BenchmarkText(b *testing.B) {
+	const text = "some text"
+	hue.Enabled(true)
+	b.Run("simple", func(b *testing.B) {
+		style := hue.Cyan
+		for b.Loop() {
+			style.Text(text)
+		}
+	})
+
+	b.Run("composite fast", func(b *testing.B) {
+		style := hue.Cyan | hue.WhiteBackground | hue.Bold | hue.Strikethrough
+		for b.Loop() {
+			style.Text(text)
+		}
+	})
+
+	b.Run("composite slow", func(b *testing.B) {
+		style := hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold | hue.Underline | hue.GreenBackground | hue.Reverse
+		for b.Loop() {
+			style.Text(text)
 		}
 	})
 }
