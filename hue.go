@@ -304,9 +304,16 @@ func (s Style) Sprintf(format string, a ...any) string {
 func (s Style) Sprintln(a ...any) string {
 	// Important to add the newline at the very end so wrap the raw text
 	// then do Sprintln
-	text := s.wrap(fmt.Sprint(a...))
+	text := s.wrap(fmt.Sprint(a...)) + "\n"
 
-	return fmt.Sprintln(text)
+	return text
+}
+
+// Text returns a styled string, it is like [Style.Sprint] but it's argument must be a string.
+//
+// Text is more performant than the Print methods.
+func (s Style) Text(text string) string {
+	return s.wrap(text)
 }
 
 // wrap wraps text with the styles escape and reset sequences.
