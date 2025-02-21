@@ -78,7 +78,7 @@ func Enabled(v bool) {
 //
 // Using arbitrary bitwise operators on a Style, or casting arbitrary uints to a Style will likely produce invalid
 // output so callers are advised to use only the declarations in this package.
-type Style uint
+type Style uint64
 
 const (
 	Bold                    Style = 1 << iota // Set bold text mode, some terminals may use bright colour variants instead of bold
