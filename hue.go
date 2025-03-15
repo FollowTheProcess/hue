@@ -337,6 +337,7 @@ func autoDetectEnabled() bool {
 	// went down a bit of a rabbit hole. It turns out that under the hood, os.Getenv is guarded by a sync.Once
 	// so only on the first call to Getenv are we actually making a syscall, all future calls just use the
 	// cached copy so no need to do anything clever in user code!
+
 	// $FORCE_COLOR overrides everything
 	if os.Getenv("FORCE_COLOR") != "" {
 		return true
@@ -347,10 +348,8 @@ func autoDetectEnabled() bool {
 		return false
 	}
 
-	// If the $TERM env var looks like xtermXXX then it's
-	// probably safe e.g. xterm-256-color, xterm-ghostty etc.
-	if strings.HasPrefix(os.Getenv("TERM"), "xterm") {
-		return true
+	if os.Getenv("TERM") == "dumb" {
+		return false
 	}
 
 	// Finally check if stdout's file descriptor is a terminal (best effort)

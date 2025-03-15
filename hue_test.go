@@ -668,6 +668,8 @@ func TestStyleCodeCombinations(t *testing.T) {
 }
 
 func TestVisual(t *testing.T) {
+	hue.Enabled(true) // go test buffers output so autodetection disabled colour
+
 	// Run with go test -v, simple visual check to see if we're writing
 	// the correct colours
 	tests := []struct {

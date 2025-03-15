@@ -783,6 +783,8 @@ func TestPanicDuringWrite(t *testing.T) {
 }
 
 func TestVisual(t *testing.T) {
+	hue.Enabled(true) // go test buffers output so autodetection disabled colour
+
 	writer := tabwriter.NewWriter(os.Stdout, 1, 8, 2, ' ', 0)
 	defer writer.Flush()
 
