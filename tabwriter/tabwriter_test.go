@@ -28,7 +28,7 @@ func (b *buffer) Write(buf []byte) (written int, err error) {
 	n := len(b.a)
 	m := len(buf)
 
-	if !(n+m <= cap(b.a)) {
+	if n+m > cap(b.a) {
 		panic("buffer.Write: buffer too small")
 	}
 
