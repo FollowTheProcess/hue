@@ -367,19 +367,6 @@ type codes struct {
 	nFront int
 }
 
-func (c *codes) add(str string) {
-	if c.nFront < len(c.front) {
-		// There's room in the stack buffer
-		c.front[c.nFront] = str
-		c.nFront++
-		return
-	}
-
-	// Slower, we've filled up the stack buffer so must now append
-	// to the back slice
-	c.back = append(c.back, str)
-}
-
 func (c *codes) String() string {
 	var n int
 	var b strings.Builder
@@ -412,4 +399,17 @@ func (c *codes) String() string {
 	}
 
 	return b.String()
+}
+
+func (c *codes) add(str string) {
+	if c.nFront < len(c.front) {
+		// There's room in the stack buffer
+		c.front[c.nFront] = str
+		c.nFront++
+		return
+	}
+
+	// Slower, we've filled up the stack buffer so must now append
+	// to the back slice
+	c.back = append(c.back, str)
 }
