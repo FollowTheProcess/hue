@@ -11,7 +11,7 @@
 // The hue version makes only minor adjustments to ensure that ANSI escape sequences
 // do not count towards cell width calculations and therefore, text written with hue/tabwriter
 // will format correctly with or without ANSI styles.
-package tabwriter
+package tabwriter // import "go.followtheprocess.codes/hue/tabwriter"
 
 import (
 	"fmt"
