@@ -9,6 +9,7 @@ tasks:
   default:
     desc: List all available tasks
     silent: true
+    internal: true
     cmds:
       - task --list
 

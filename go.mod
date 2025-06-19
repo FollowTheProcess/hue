@@ -1,4 +1,4 @@
-module github.com/FollowTheProcess/hue
+module go.followtheprocess.codes/hue
 
 go 1.24
 

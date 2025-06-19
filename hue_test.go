@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/FollowTheProcess/hue"
+	"go.followtheprocess.codes/hue"
 )
 
 func TestFprint(t *testing.T) {

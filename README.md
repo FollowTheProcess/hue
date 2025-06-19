@@ -1,7 +1,7 @@
 # hue
 
 [![License](https://img.shields.io/github/license/FollowTheProcess/hue)](https://github.com/FollowTheProcess/hue)
-[![Go Reference](https://pkg.go.dev/badge/github.com/FollowTheProcess/hue.svg)](https://pkg.go.dev/github.com/FollowTheProcess/hue)
+[![Go Reference](https://pkg.go.dev/badge/go.followtheprocess.codes/hue.svg)](https://pkg.go.dev/go.followtheprocess.codes/hue)
 [![Go Report Card](https://goreportcard.com/badge/github.com/FollowTheProcess/hue)](https://goreportcard.com/report/github.com/FollowTheProcess/hue)
 [![GitHub](https://img.shields.io/github/v/release/FollowTheProcess/hue?logo=github&sort=semver)](https://github.com/FollowTheProcess/hue)
 [![CI](https://github.com/FollowTheProcess/hue/workflows/CI/badge.svg)](https://github.com/FollowTheProcess/hue/actions?query=workflow%3ACI)
@@ -30,7 +30,7 @@ Like most libraries that do this sort of thing, hue uses [ANSI Escape Codes] to 
 ## Installation
 
 ```shell
-go get github.com/FollowTheProcess/hue@latest
+go get go.followtheprocess.codes/hue@latest
 ```
 
 ## Quickstart
@@ -40,7 +40,7 @@ Colours and styles in `hue` are implemented as a bitmask and are therefore compi
 ```go
 package main
 
-import "github.com/FollowTheProcess/hue"
+import "go.followtheprocess.codes/hue"
 
 const (
     success = hue.Green | hue.Bold
@@ -66,12 +66,12 @@ This benchmark measures returning a bold cyan string, one from [fatih/color] and
 ❯ go test ./... -run None -benchmem -bench BenchmarkColour
 goos: darwin
 goarch: arm64
-pkg: github.com/FollowTheProcess/hue
+pkg: go.followtheprocess.codes
 cpu: Apple M1 Pro
 BenchmarkColour/hue-8            7497607               138.7 ns/op            80 B/op          3 allocs/op
 BenchmarkColour/color-8          2893501               415.2 ns/op           248 B/op         12 allocs/op
 PASS
-ok      github.com/FollowTheProcess/hue 3.044s
+ok      go.followtheprocess.codes 3.044s
 ```
 
 - Nearly 70% faster
