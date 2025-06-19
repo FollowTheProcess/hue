@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/FollowTheProcess/hue"
-	"github.com/FollowTheProcess/hue/tabwriter"
+	"go.followtheprocess.codes/hue"
+	"go.followtheprocess.codes/hue/tabwriter"
 )
 
 type buffer struct {

@@ -1,5 +1,5 @@
 // Package hue is a simple, modern colour/style package for CLI applications in Go.
-package hue
+package hue // import "go.followtheprocess.codes/hue"
 
 import (
 	"fmt"
