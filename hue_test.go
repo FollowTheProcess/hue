@@ -857,21 +857,13 @@ func captureOutput(tb testing.TB, fn func() error) (stdout string) {
 
 	var wg sync.WaitGroup
 
-	wg.Add(1)
-
-	// Copy in goroutines to avoid blocking
-	go func(wg *sync.WaitGroup) {
-		defer func() {
-			close(stdoutCapture)
-			wg.Done()
-		}()
-
+	wg.Go(func() {
 		buf := &bytes.Buffer{}
 		if _, err := io.Copy(buf, stdoutReader); err != nil {
 			tb.Fatalf("CaptureOutput: failed to copy from stdout reader: %v", err)
 		}
 		stdoutCapture <- buf.String()
-	}(&wg)
+	})
 
 	// Call the test function that produces the output
 	if err := fn(); err != nil {
