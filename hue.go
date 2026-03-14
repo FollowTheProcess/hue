@@ -353,6 +353,7 @@ func autoDetectEnabled() bool {
 	}
 
 	// Finally check if stdout's file descriptor is a terminal (best effort)
+	//nolint:gosec // No overflow realistically possible here
 	if term.IsTerminal(int(os.Stdout.Fd())) {
 		return true
 	}

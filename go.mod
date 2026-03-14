@@ -1,6 +1,6 @@
 module go.followtheprocess.codes/hue
 
-go 1.25.0
+go 1.26
 
 require golang.org/x/term v0.41.0
 
