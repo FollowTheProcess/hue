@@ -736,6 +736,87 @@ func TestVisual(t *testing.T) {
 	}
 }
 
+func TestAppendText(t *testing.T) {
+	tests := []struct {
+		name    string    // Name of the test case
+		want    string    // Expected result including escape sequences
+		dst     []byte    // Existing destination buffer (may be nil)
+		input   []byte    // Text to style
+		style   hue.Style // Style under test
+		enabled bool      // Whether hue is enabled
+	}{
+		{
+			name:    "basic",
+			dst:     nil,
+			input:   []byte("hello"),
+			style:   hue.Green,
+			enabled: true,
+			want:    "\x1b[32mhello\x1b[0m",
+		},
+		{
+			name:    "many styles",
+			dst:     nil,
+			input:   []byte("hello"),
+			style:   hue.Green | hue.BlueBackground | hue.Bold | hue.Underline,
+			enabled: true,
+			want:    "\x1b[1;4;32;44mhello\x1b[0m",
+		},
+		{
+			name:    "basic disabled",
+			dst:     nil,
+			input:   []byte("hello"),
+			style:   hue.Green,
+			enabled: false,
+			want:    "hello",
+		},
+		{
+			name:    "many styles disabled",
+			dst:     nil,
+			input:   []byte("hello"),
+			style:   hue.Green | hue.BlueBackground | hue.Bold | hue.Underline,
+			enabled: false,
+			want:    "hello",
+		},
+		{
+			name:    "appends to existing dst",
+			dst:     []byte("prefix:"),
+			input:   []byte("hello"),
+			style:   hue.Red,
+			enabled: true,
+			want:    "prefix:\x1b[31mhello\x1b[0m",
+		},
+		{
+			name:    "appends to existing dst disabled",
+			dst:     []byte("prefix:"),
+			input:   []byte("hello"),
+			style:   hue.Red,
+			enabled: false,
+			want:    "prefix:hello",
+		},
+		{
+			name:    "empty input",
+			dst:     nil,
+			input:   []byte(""),
+			style:   hue.Cyan,
+			enabled: true,
+			want:    "\x1b[36m\x1b[0m",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hue.Enabled(tt.enabled)
+
+			got := strconv.Quote(string(tt.style.AppendText(tt.dst, tt.input)))
+			want := strconv.Quote(tt.want)
+
+			if got != want {
+				t.Errorf("\nGot:\t%v\nWanted:\t%v\n", got, want)
+			}
+		})
+	}
+}
+
 func BenchmarkStyle(b *testing.B) {
 	hue.Enabled(true)
 	b.Run("simple", func(b *testing.B) {
@@ -815,6 +896,31 @@ func BenchmarkText(b *testing.B) {
 		style := hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold | hue.Underline | hue.GreenBackground | hue.Reverse
 		for b.Loop() {
 			style.Text(text)
+		}
+	})
+}
+
+func BenchmarkAppendText(b *testing.B) {
+	text := []byte("some text")
+	hue.Enabled(true)
+	b.Run("simple", func(b *testing.B) {
+		style := hue.Cyan
+		for b.Loop() {
+			style.AppendText(nil, text)
+		}
+	})
+
+	b.Run("composite fast", func(b *testing.B) {
+		style := hue.Cyan | hue.WhiteBackground | hue.Bold | hue.Strikethrough
+		for b.Loop() {
+			style.AppendText(nil, text)
+		}
+	})
+
+	b.Run("composite slow", func(b *testing.B) {
+		style := hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold | hue.Underline | hue.GreenBackground | hue.Reverse
+		for b.Loop() {
+			style.AppendText(nil, text)
 		}
 	})
 }
