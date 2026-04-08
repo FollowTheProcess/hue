@@ -316,6 +316,29 @@ func (s Style) Text(text string) string {
 	return s.wrap(text)
 }
 
+// AppendText appends the styled form of text to dst and returns the extended slice.
+// If colour is disabled, text is appended unchanged.
+//
+// AppendText is more performant than [Style.Text] as it avoids allocating an intermediate
+// string for the result — useful in hot paths where the caller already maintains a []byte buffer.
+func (s Style) AppendText(dst, text []byte) []byte {
+	if !enabled.Load() {
+		return append(dst, text...)
+	}
+
+	code, err := s.Code()
+	if err != nil {
+		return append(dst, text...)
+	}
+
+	dst = append(dst, escape...)
+	dst = append(dst, code...)
+	dst = append(dst, 'm')
+	dst = append(dst, text...)
+	dst = append(dst, reset...)
+	return dst
+}
+
 // wrap wraps text with the styles escape and reset sequences.
 func (s Style) wrap(text string) string {
 	if !enabled.Load() {
