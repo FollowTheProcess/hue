@@ -16,46 +16,48 @@ formatters:
 linters:
   default: all
   disable:
-    - decorder # Don't care about this
-    - dupl # Basically every table driven test ever triggers this
-    - dupword # Messes with test cases more often than not
-    - err113 # Out of date
-    - exhaustruct # No
-    - forbidigo # Nothing to forbid
-    - funlen # Bad metric for complexity
-    - ginkgolinter # I don't use whatever this is
-    - gochecknoglobals # Globals are fine sometimes, use common sense
-    - gocognit # cyclo with another name
-    - gocyclo # cyclop does this instead
-    - godox # "todo" and "fixme" comments are allowed
-    - goheader # No need
-    - gosmopolitan # No need
-    - grouper # Imports take care of themselves, rest is common sense
-    - ireturn # This is just not necessary or practical in a real codebase
-    - lll # Auto formatters do this and what they can't do I don't care about
-    - maintidx # This is just the inverse of complexity... which is cyclop
-    - nestif # cyclop does this
-    - nlreturn # Similar to wsl, I think best left to judgement
-    - noinlineerr # Inline errors are fine
-    - nonamedreturns # Named returns are often helpful, it's naked returns that are the issue
-    - paralleltest # I've never had Go tests take longer than a few seconds, it's fine
-    - unparam # gopls is better and more subtle
-    - varnamelen # Lots of false positives of things that are fine
-    - wrapcheck # Not every error must be wrapped
-    - wsl # Very aggressive, some of this I like but tend to do anyway
-    - wsl_v5 # As above, just newer version
+    - decorder  # Don't care about this
+    - dupl  # Basically every table driven test ever triggers this
+    - dupword  # Messes with test cases more often than not
+    - err113  # Out of date
+    - exhaustruct  # No
+    - forbidigo  # Nothing to forbid
+    - funlen  # Bad metric for complexity
+    - ginkgolinter  # I don't use whatever this is
+    - gochecknoglobals  # Globals are fine sometimes, use common sense
+    - gocognit  # cyclo with another name
+    - gocyclo  # cyclop does this instead
+    - godox  # "todo" and "fixme" comments are allowed
+    - goheader  # No need
+    - gomodguard  # Deprecated
+    - gosmopolitan  # No need
+    - grouper  # Imports take care of themselves, rest is common sense
+    - ireturn  # This is just not necessary or practical in a real codebase
+    - lll  # Auto formatters do this and what they can't do I don't care about
+    - maintidx  # This is just the inverse of complexity... which is cyclop
+    - nestif  # cyclop does this
+    - nlreturn  # Similar to wsl, I think best left to judgement
+    - noinlineerr  # Inline errors are fine
+    - nonamedreturns  # Named returns are often helpful, it's naked returns that are the issue
+    - paralleltest  # I've never had Go tests take longer than a few seconds, it's fine
+    - unparam  # gopls is better and more subtle
+    - varnamelen  # Lots of false positives of things that are fine
+    - wrapcheck  # Not every error must be wrapped
+    - wsl  # Very aggressive, some of this I like but tend to do anyway
+    - wsl_v5  # As above, just newer version
 
   exclusions:
     presets:
       # See https://golangci-lint.run/usage/false-positives/#exclusion-presets
-      - comments # Revive in particular has lots of false positives
+      - comments  # Revive in particular has lots of false positives
       - std-error-handling
       - common-false-positives
     rules:
       - path: _test\.go
         linters:
-          - prealloc # These kinds of optimisations will make no difference to test code
-          - gosec # Tests don't need security stuff
+          - prealloc  # These kinds of optimisations will make no difference to test code
+          - gosec  # Tests don't need security stuff
+          - goconst  # Annoying
 
     paths:
       - tabwriter
@@ -90,13 +92,13 @@ linters:
 
     gosec:
       excludes:
-        - G104 # Errors not checked, handled by errcheck
+        - G104  # Errors not checked, handled by errcheck
 
     govet:
       enable-all: true
 
     nakedret:
-      max-func-lines: 0 # Disallow any naked returns
+      max-func-lines: 0  # Disallow any naked returns
 
     nolintlint:
       allow-unused: false
@@ -117,24 +119,24 @@ linters:
       enable-all-rules: true
       rules:
         - name: add-constant
-          disabled: true # goconst does this
+          disabled: true  # goconst does this
 
         - name: argument-limit
           arguments:
             - 5
 
         - name: cognitive-complexity
-          disabled: true # gocognit does this
+          disabled: true  # gocognit does this
 
         - name: comment-spacings
           arguments:
             - "nolint:"
 
         - name: cyclomatic
-          disabled: true # cyclop does this
+          disabled: true  # cyclop does this
 
         - name: enforce-switch-style
-          disabled: true # exhaustive handles this
+          disabled: true  # exhaustive handles this
 
         - name: exported
           arguments:
@@ -142,23 +144,23 @@ linters:
             - checkPublicInterface
 
         - name: function-length
-          disabled: true # Bad proxy for complexity
+          disabled: true  # Bad proxy for complexity
 
         - name: function-result-limit
           arguments:
             - 3
 
         - name: import-shadowing
-          disabled: true # predeclared does this
+          disabled: true  # predeclared does this
 
         - name: line-length-limit
-          disabled: true # gofmt/golines handles this well enough
+          disabled: true  # gofmt/golines handles this well enough
 
         - name: max-public-structs
-          disabled: true # This is a dumb rule
+          disabled: true  # This is a dumb rule
 
         - name: redefines-builtin-id
-          disabled: true # predeclared does this
+          disabled: true  # predeclared does this
 
         - name: unhandled-error
           arguments:
@@ -167,10 +169,10 @@ linters:
             - bytes.Buffer.Write(String|Byte)?
 
         - name: flag-parameter
-          disabled: true # As far as I can work out this just doesn't like bools
+          disabled: true  # As far as I can work out this just doesn't like bools
 
         - name: unused-parameter
-          disabled: true # The gopls unused analyzer covers this better
+          disabled: true  # The gopls unused analyzer covers this better
 
         - name: unused-receiver
-          disabled: true # As above
+          disabled: true  # As above
