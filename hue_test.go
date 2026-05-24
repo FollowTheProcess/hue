@@ -817,6 +817,141 @@ func TestAppendText(t *testing.T) {
 	}
 }
 
+func TestAppendString(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    string
+		input   string
+		dst     []byte
+		style   hue.Style
+		enabled bool
+	}{
+		{
+			name:    "basic",
+			dst:     nil,
+			input:   "hello",
+			style:   hue.Green,
+			enabled: true,
+			want:    "\x1b[32mhello\x1b[0m",
+		},
+		{
+			name:    "many styles",
+			dst:     nil,
+			input:   "hello",
+			style:   hue.Green | hue.BlueBackground | hue.Bold | hue.Underline,
+			enabled: true,
+			want:    "\x1b[1;4;32;44mhello\x1b[0m",
+		},
+		{
+			name:    "basic disabled",
+			dst:     nil,
+			input:   "hello",
+			style:   hue.Green,
+			enabled: false,
+			want:    "hello",
+		},
+		{
+			name:    "many styles disabled",
+			dst:     nil,
+			input:   "hello",
+			style:   hue.Green | hue.BlueBackground | hue.Bold | hue.Underline,
+			enabled: false,
+			want:    "hello",
+		},
+		{
+			name:    "appends to existing dst",
+			dst:     []byte("prefix:"),
+			input:   "hello",
+			style:   hue.Red,
+			enabled: true,
+			want:    "prefix:\x1b[31mhello\x1b[0m",
+		},
+		{
+			name:    "appends to existing dst disabled",
+			dst:     []byte("prefix:"),
+			input:   "hello",
+			style:   hue.Red,
+			enabled: false,
+			want:    "prefix:hello",
+		},
+		{
+			name:    "empty input",
+			dst:     nil,
+			input:   "",
+			style:   hue.Cyan,
+			enabled: true,
+			want:    "\x1b[36m\x1b[0m",
+		},
+		{
+			name:    "invalid style falls back to raw text",
+			dst:     []byte("prefix:"),
+			input:   "hello",
+			style:   0,
+			enabled: true,
+			want:    "prefix:hello",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hue.Enabled(tt.enabled)
+
+			got := strconv.Quote(string(tt.style.AppendString(tt.dst, tt.input)))
+			want := strconv.Quote(tt.want)
+
+			if got != want {
+				t.Errorf("\nGot:\t%v\nWanted:\t%v\n", got, want)
+			}
+		})
+	}
+}
+
+// TestAppendParity asserts that AppendText, AppendString and Text all produce
+// identical bytes for the same style and text.
+func TestAppendParity(t *testing.T) {
+	styles := []struct {
+		name  string
+		style hue.Style
+	}{
+		{name: "single", style: hue.Cyan},
+		{name: "single background", style: hue.WhiteBackground},
+		{name: "bold cyan", style: hue.Bold | hue.Cyan},
+		{name: "bold white underlined", style: hue.Bold | hue.White | hue.Underline},
+		{name: "lots of everything", style: hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold},
+		{
+			name:  "more than six",
+			style: hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold | hue.Underline | hue.GreenBackground | hue.Reverse,
+		},
+	}
+
+	const text = "some text"
+
+	for _, enabled := range []bool{true, false} {
+		for _, tt := range styles {
+			name := tt.name
+			if enabled {
+				name += " enabled"
+			} else {
+				name += " disabled"
+			}
+
+			t.Run(name, func(t *testing.T) {
+				hue.Enabled(enabled)
+
+				want := []byte(tt.style.Text(text))
+
+				if got := tt.style.AppendText(nil, []byte(text)); !bytes.Equal(got, want) {
+					t.Errorf("AppendText mismatch\nGot:\t%q\nWanted:\t%q\n", got, want)
+				}
+
+				if got := tt.style.AppendString(nil, text); !bytes.Equal(got, want) {
+					t.Errorf("AppendString mismatch\nGot:\t%q\nWanted:\t%q\n", got, want)
+				}
+			})
+		}
+	}
+}
+
 func BenchmarkStyle(b *testing.B) {
 	hue.Enabled(true)
 	b.Run("simple", func(b *testing.B) {
@@ -900,29 +1035,55 @@ func BenchmarkText(b *testing.B) {
 	})
 }
 
+// benchStyles is the shared spread of styles used by the append benchmarks: a
+// single style, a composite that fits the stack buffer, and a pathological
+// composite that overflows it.
+var benchStyles = []struct {
+	name  string
+	style hue.Style
+}{
+	{name: "simple", style: hue.Cyan},
+	{name: "composite fast", style: hue.Cyan | hue.WhiteBackground | hue.Bold | hue.Strikethrough},
+	{
+		name:  "composite slow",
+		style: hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold | hue.Underline | hue.GreenBackground | hue.Reverse,
+	},
+}
+
 func BenchmarkAppendText(b *testing.B) {
 	text := []byte("some text")
 	hue.Enabled(true)
-	b.Run("simple", func(b *testing.B) {
-		style := hue.Cyan
-		for b.Loop() {
-			style.AppendText(nil, text)
-		}
-	})
 
-	b.Run("composite fast", func(b *testing.B) {
-		style := hue.Cyan | hue.WhiteBackground | hue.Bold | hue.Strikethrough
-		for b.Loop() {
-			style.AppendText(nil, text)
-		}
-	})
+	for _, tt := range benchStyles {
+		// nil dst grows from nil each call: reflects the API in isolation.
+		b.Run(tt.name+"/nil", func(b *testing.B) {
+			for b.Loop() {
+				tt.style.AppendText(nil, text)
+			}
+		})
 
-	b.Run("composite slow", func(b *testing.B) {
-		style := hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold | hue.Underline | hue.GreenBackground | hue.Reverse
-		for b.Loop() {
-			style.AppendText(nil, text)
-		}
-	})
+		// Pre-sized dst reused across calls: reflects real hot-path usage.
+		b.Run(tt.name+"/sized", func(b *testing.B) {
+			dst := make([]byte, 0, 64)
+			for b.Loop() {
+				dst = tt.style.AppendText(dst[:0], text)
+			}
+		})
+	}
+}
+
+func BenchmarkAppendString(b *testing.B) {
+	const text = "some text"
+	hue.Enabled(true)
+
+	for _, tt := range benchStyles {
+		b.Run(tt.name+"/sized", func(b *testing.B) {
+			dst := make([]byte, 0, 64)
+			for b.Loop() {
+				dst = tt.style.AppendString(dst[:0], text)
+			}
+		})
+	}
 }
 
 // captureOutput captures and returns data printed to [os.Stdout] and [os.Stderr] by the provided function fn, allowing

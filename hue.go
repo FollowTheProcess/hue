@@ -320,23 +320,78 @@ func (s Style) Text(text string) string {
 // If colour is disabled, text is appended unchanged.
 //
 // AppendText is more performant than [Style.Text] as it avoids allocating an intermediate
-// string for the result — useful in hot paths where the caller already maintains a []byte buffer.
+// string for the result, even for composite styles: useful in hot paths where the caller
+// already maintains a []byte buffer.
 func (s Style) AppendText(dst, text []byte) []byte {
+	return appendStyled(s, dst, text)
+}
+
+// AppendString is like [Style.AppendText] but takes the text as a string, avoiding the
+// []byte conversion (and its allocation) a caller would otherwise need to style a string.
+func (s Style) AppendString(dst []byte, text string) []byte {
+	return appendStyled(s, dst, text)
+}
+
+// appendStyled is the shared, allocation-free implementation of [Style.AppendText] and
+// [Style.AppendString]. The text type set is constrained to the two types append accepts
+// after a []byte, so a string is appended without a []byte conversion.
+func appendStyled[T []byte | string](s Style, dst []byte, text T) []byte {
 	if !enabled.Load() {
 		return append(dst, text...)
 	}
 
-	code, err := s.Code()
-	if err != nil {
-		return append(dst, text...)
+	start := len(dst)
+	dst = append(dst, escape...)
+
+	dst, ok := s.appendCode(dst)
+	if !ok {
+		// Invalid style: discard the escape we appended and fall back to raw text.
+		return append(dst[:start], text...)
 	}
 
-	dst = append(dst, escape...)
-	dst = append(dst, code...)
 	dst = append(dst, 'm')
 	dst = append(dst, text...)
-	dst = append(dst, reset...)
-	return dst
+	return append(dst, reset...)
+}
+
+// appendCode appends s's ANSI escape code (the part between the leading "\x1b[" and the
+// trailing "m") to dst and reports whether s was a valid style. It is the allocation-free
+// sibling of [Style.Code], producing byte-identical output without the intermediate string.
+func (s Style) appendCode(dst []byte) ([]byte, bool) {
+	if s == 0 || s >= maxStyle {
+		return dst, false
+	}
+
+	// Single style (exactly one bit set): reuse Code's constant fast path.
+	if s&(s-1) == 0 {
+		code, err := s.Code()
+		if err != nil {
+			return dst, false
+		}
+		return append(dst, code...), true
+	}
+
+	// Composite: append each set sub-style's code, ';'-separated, low bit to high.
+	// This is the same order and separator codes.String produces for Code.
+	first := true
+	for style := Bold; style <= BrightWhiteBackground; style <<= 1 {
+		if s&style == 0 {
+			continue
+		}
+
+		code, err := style.Code()
+		if err != nil {
+			return dst, false
+		}
+
+		if !first {
+			dst = append(dst, ';')
+		}
+		dst = append(dst, code...)
+		first = false
+	}
+
+	return dst, true
 }
 
 // wrap wraps text with the styles escape and reset sequences.
@@ -376,7 +431,6 @@ func autoDetectEnabled() bool {
 	}
 
 	// Finally check if stdout's file descriptor is a terminal (best effort)
-
 	if term.IsTerminal(int(os.Stdout.Fd())) {
 		return true
 	}
