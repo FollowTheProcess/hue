@@ -1,0 +1,78 @@
+# Ported from Taskfile.yml. Run `mise tasks` to list, `mise run <task>` to run one.
+
+[tools]
+golangci-lint = "latest"
+typos = "latest"
+vhs = "latest"
+fd = "latest"
+"go:golang.org/x/pkgsite/cmd/pkgsite" = "latest"
+
+[vars]
+cov_data = "coverage.out"
+
+[tasks.tidy]
+description = "Tidy dependencies in go.mod and go.sum"
+sources = ["**/*.go", "go.mod", "go.sum"]
+outputs = { auto = true }
+run = "go mod tidy"
+
+[tasks.fmt]
+description = "Run go fmt on all source files"
+sources = ["**/*.go"]
+outputs = { auto = true }
+run = "go fmt ./..."
+
+[tasks.test]
+description = "Run the test suite"
+sources = ["**/*.go", "go.mod", "go.sum"]
+outputs = { auto = true }
+# -race needs CGO (https://go.dev/doc/articles/race_detector#Requirements)
+env = { CGO_ENABLED = "1" }
+run = "go test -race ./..."
+
+[tasks.bench]
+description = "Run all project benchmarks"
+sources = ["**/*.go", "go.mod", "go.sum"]
+outputs = { auto = true }
+run = "go test ./... -run None -benchmem -bench ."
+
+[tasks.lint]
+description = "Run the linters and auto-fix if possible"
+sources = ["**/*.go", "go.mod", "go.sum", ".golangci.yml"]
+outputs = { auto = true }
+depends = ["fmt"]
+run = ["golangci-lint run --fix", "typos"]
+
+[tasks.doc]
+description = "Render the pkg docs locally"
+run = "pkgsite -open"
+
+[tasks.demo]
+description = "Render the demo gifs"
+sources = ["docs/src/*.tape", "**/*.go"]
+outputs = { auto = true }
+run = 'for file in ./docs/src/*.tape; do vhs "$file"; done'
+
+[tasks.cov]
+description = "Calculate test coverage and render the html"
+outputs = ["{{ vars.cov_data }}"]
+run = [
+  "go test -race -cover -covermode atomic -coverprofile {{ vars.cov_data }} ./...",
+  "go tool cover -html {{ vars.cov_data }}",
+]
+
+[tasks.check]
+description = "Run tests and linting in one"
+run = ["mise run test", "mise run lint"]
+
+[tasks.sloc]
+description = "Print lines of code"
+run = "fd . -e go | xargs wc -l | sort -nr | head"
+
+[tasks.clean]
+description = "Remove build artifacts and other clutter"
+run = ["go clean ./...", "rm -rf {{ vars.cov_data }}"]
+
+[tasks.update]
+description = "Updates dependencies in go.mod and go.sum"
+run = ["go get -u ./...", "go mod tidy"]
