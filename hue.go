@@ -431,7 +431,6 @@ func autoDetectEnabled() bool {
 	}
 
 	// Finally check if stdout's file descriptor is a terminal (best effort)
-	//nolint: gosec // file descriptors are always small, the uintptr -> int conversion can't overflow
 	if term.IsTerminal(int(os.Stdout.Fd())) {
 		return true
 	}
