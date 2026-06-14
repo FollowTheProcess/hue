@@ -1,0 +1,19 @@
+when:
+  - event: [push]
+    branch: [main]
+  - event: [pull_request]
+    branch: [main]
+
+engine: nixery
+
+dependencies:
+  nixpkgs/nixpkgs-unstable:
+    - go
+    - golangci-lint
+
+steps:
+  - name: Format
+    command: golangci-lint fmt ./... --diff-colored
+
+  - name: Lint
+    command: golangci-lint run ./...

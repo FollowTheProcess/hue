@@ -9,7 +9,6 @@ engine: nixery
 dependencies:
   nixpkgs/nixpkgs-unstable:
     - go
-    - golangci-lint
   nixpkgs:
     - gcc  # Needed for CGO_ENABLED=1 (go test -race)
 
@@ -18,9 +17,3 @@ steps:
     environment:
       CGO_ENABLED: "1"
     command: go test -race ./...
-
-  - name: Format
-    command: golangci-lint fmt ./... --diff-colored
-
-  - name: Lint
-    command: golangci-lint run ./...
