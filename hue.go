@@ -1,5 +1,5 @@
 // Package hue is a simple, modern colour/style package for CLI applications in Go.
-package hue // import "go.followtheprocess.codes/hue"
+package hue
 
 import (
 	"fmt"
@@ -351,6 +351,7 @@ func appendStyled[T []byte | string](s Style, dst []byte, text T) []byte {
 
 	dst = append(dst, 'm')
 	dst = append(dst, text...)
+
 	return append(dst, reset...)
 }
 
@@ -368,12 +369,14 @@ func (s Style) appendCode(dst []byte) ([]byte, bool) {
 		if err != nil {
 			return dst, false
 		}
+
 		return append(dst, code...), true
 	}
 
 	// Composite: append each set sub-style's code, ';'-separated, low bit to high.
 	// This is the same order and separator codes.String produces for Code.
 	first := true
+
 	for style := Bold; style <= BrightWhiteBackground; style <<= 1 {
 		if s&style == 0 {
 			continue
@@ -387,6 +390,7 @@ func (s Style) appendCode(dst []byte) ([]byte, bool) {
 		if !first {
 			dst = append(dst, ';')
 		}
+
 		dst = append(dst, code...)
 		first = false
 	}
@@ -446,8 +450,10 @@ type codes struct {
 }
 
 func (c *codes) String() string {
-	var n int
-	var b strings.Builder
+	var (
+		n int
+		b strings.Builder
+	)
 
 	// Fast path: only the stack buffer is used
 	for _, code := range c.front {
@@ -455,11 +461,13 @@ func (c *codes) String() string {
 			n += len(code) + 1 // 1 = len(";")
 		}
 	}
+
 	b.Grow(n)
 
 	if c.front[0] != "" {
 		b.WriteString(c.front[0])
 	}
+
 	for _, code := range c.front[1:] {
 		if code != "" {
 			b.WriteByte(';')
@@ -484,6 +492,7 @@ func (c *codes) add(str string) {
 		// There's room in the stack buffer
 		c.front[c.nFront] = str
 		c.nFront++
+
 		return
 	}
 

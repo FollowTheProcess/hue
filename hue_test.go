@@ -917,7 +917,10 @@ func TestAppendParity(t *testing.T) {
 		{name: "single background", style: hue.WhiteBackground},
 		{name: "bold cyan", style: hue.Bold | hue.Cyan},
 		{name: "bold white underlined", style: hue.Bold | hue.White | hue.Underline},
-		{name: "lots of everything", style: hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold},
+		{
+			name:  "lots of everything",
+			style: hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold,
+		},
 		{
 			name:  "more than six",
 			style: hue.Blue | hue.Red | hue.BlackBackground | hue.Italic | hue.Strikethrough | hue.Bold | hue.Underline | hue.GreenBackground | hue.Reverse,
@@ -987,6 +990,7 @@ func BenchmarkStyle(b *testing.B) {
 
 func BenchmarkSprint(b *testing.B) {
 	const text = "some text"
+
 	hue.Enabled(true)
 	b.Run("simple", func(b *testing.B) {
 		style := hue.Cyan
@@ -1012,6 +1016,7 @@ func BenchmarkSprint(b *testing.B) {
 
 func BenchmarkText(b *testing.B) {
 	const text = "some text"
+
 	hue.Enabled(true)
 	b.Run("simple", func(b *testing.B) {
 		style := hue.Cyan
@@ -1052,6 +1057,7 @@ var benchStyles = []struct {
 
 func BenchmarkAppendText(b *testing.B) {
 	text := []byte("some text")
+
 	hue.Enabled(true)
 
 	for _, tt := range benchStyles {
@@ -1074,6 +1080,7 @@ func BenchmarkAppendText(b *testing.B) {
 
 func BenchmarkAppendString(b *testing.B) {
 	const text = "some text"
+
 	hue.Enabled(true)
 
 	for _, tt := range benchStyles {
@@ -1129,6 +1136,7 @@ func captureOutput(tb testing.TB, fn func() error) (stdout string) {
 		if _, err := io.Copy(buf, stdoutReader); err != nil {
 			tb.Fatalf("CaptureOutput: failed to copy from stdout reader: %v", err)
 		}
+
 		stdoutCapture <- buf.String()
 	})
 

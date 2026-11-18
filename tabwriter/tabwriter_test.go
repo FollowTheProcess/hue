@@ -61,7 +61,7 @@ func write(t *testing.T, testname string, w *tabwriter.Writer, src string) {
 	}
 }
 
-func verify( //nolint: revive // argument-limit
+func verify(
 	t *testing.T,
 	testname string,
 	w *tabwriter.Writer,
@@ -87,7 +87,7 @@ func verify( //nolint: revive // argument-limit
 	}
 }
 
-func check( //nolint: revive // argument-limit
+func check(
 	t *testing.T,
 	testname string,
 	minwidth, tabwidth, padding int,
@@ -746,7 +746,7 @@ func (panicWriter) Write([]byte) (int, error) {
 func wantPanicString(t *testing.T, want string) {
 	t.Helper()
 
-	if e := recover(); e != nil { //nolint: revive // This is deferred
+	if e := recover(); e != nil {
 		got, ok := e.(string)
 
 		switch {
