@@ -8,7 +8,10 @@ formatters:
 
   settings:
     gofumpt:
-      extra-rules: true
+      extra:
+        group-params: true
+        clothe-returns: true
+        balance-calls: true
 
     golines:
       max-len: 140
@@ -21,6 +24,7 @@ linters:
     - dupword  # Messes with test cases more often than not
     - err113  # Out of date
     - exhaustruct  # No
+    - exhaustruct_v5  # Also no
     - forbidigo  # Nothing to forbid
     - funlen  # Bad metric for complexity
     - ginkgolinter  # I don't use whatever this is
@@ -83,7 +87,7 @@ linters:
     exhaustive:
       check:
         - switch
-        - map
+        - mapliteral
       default-signifies-exhaustive: true
 
     staticcheck:

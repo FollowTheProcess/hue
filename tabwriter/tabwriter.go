@@ -11,7 +11,7 @@
 // The hue version makes only minor adjustments to ensure that ANSI escape sequences
 // do not count towards cell width calculations and therefore, text written with hue/tabwriter
 // will format correctly with or without ANSI styles.
-package tabwriter // import "go.followtheprocess.codes/hue/tabwriter"
+package tabwriter
 
 import (
 	"fmt"
@@ -200,7 +200,7 @@ func (b *Writer) reset() {
 //
 //	minwidth	minimal cell width including any padding
 //	tabwidth	width of tab characters (equivalent number of spaces)
-//	padding		padding added to a cell before computing its width
+//	padding		added to a cell before computing its width
 //	padchar		ASCII char used for padding
 //			if padchar == '\t', the Writer will assume that the
 //			width of a '\t' in the formatted output is tabwidth,
@@ -208,7 +208,7 @@ func (b *Writer) reset() {
 //			(for correct-looking results, tabwidth must correspond
 //			to the tab width in the viewer displaying the result)
 //	flags		formatting control
-func (b *Writer) Init( //nolint: revive // This is as per text/tabwriter
+func (b *Writer) Init(
 	output io.Writer,
 	minwidth, tabwidth, padding int,
 	padchar byte,
@@ -484,7 +484,7 @@ func (b *Writer) terminateCell(htab bool) int {
 }
 
 func (b *Writer) handlePanic(err *error, op string) {
-	if e := recover(); e != nil { //nolint: revive // This is itself deferred
+	if e := recover(); e != nil {
 		if op == "Flush" {
 			// If Flush ran into a panic, we still need to reset.
 			b.reset()
@@ -512,6 +512,7 @@ func (b *Writer) Flush() error {
 // don't want to expose.
 func (b *Writer) flush() (err error) {
 	defer b.handlePanic(&err, "Flush")
+
 	b.flushNoDefers()
 
 	return nil
@@ -637,7 +638,7 @@ func (b *Writer) Write(buf []byte) (n int, err error) {
 
 // NewWriter allocates and initializes a new [Writer].
 // The parameters are the same as for the Init function.
-func NewWriter( //nolint: revive // This is as per text/tabwriter
+func NewWriter(
 	output io.Writer,
 	minwidth, tabwidth, padding int,
 	padchar byte,
